@@ -2,8 +2,7 @@ app = "vespa-code-search"
 primary_region = "iad"
 
 [build]
-  dockerfile = "backend/Dockerfile"
-  context = ".."
+  dockerfile = "Dockerfile.backend"
 
 [http_service]
   internal_port = 3001
