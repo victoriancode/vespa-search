@@ -5,6 +5,10 @@ primary_region = "iad"
   dockerfile = "Dockerfile"
   context = "."
 
+[env]
+  DATA_DIR = "/data"
+  PORT = "3001"
+
 [http_service]
   internal_port = 3001
   force_https = true
