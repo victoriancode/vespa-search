@@ -11,9 +11,30 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      # Optional but very helpful for debugging path issues
+      - name: Debug paths
+        run: |
+          echo "Repo root:"
+          ls -la
+          echo ""
+          echo "backend/:"
+          ls -la backend
+          echo ""
+          test -f backend/Dockerfile && echo "✅ Found backend/Dockerfile" || (echo "❌ Missing backend/Dockerfile" && exit 1)
+          test -f backend/fly.toml && echo "✅ Found backend/fly.toml" || (echo "❌ Missing backend/fly.toml" && exit 1)
+
       - name: Deploy to Fly.io
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-        run: flyctl deploy --config backend/fly.toml --app "${FLY_APP_NAME}" --remote-only
+        run: |
+          flyctl deploy \
+            --config backend/fly.toml \
+            --dockerfile backend/Dockerfile \
+            --app "${FLY_APP_NAME}" \
+            --remote-only
