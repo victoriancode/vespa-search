@@ -108,7 +108,7 @@ async fn main() -> Result<(), AppError> {
         .init();
 
     let base_path = std::env::current_dir()?;
-    let registry_path = base_path.join("backend/data/registry.json");
+    let registry_path = base_path.join("data/registry.json");
     let repos_path = base_path.join("repos");
 
     fs::create_dir_all(registry_path.parent().unwrap()).await?;

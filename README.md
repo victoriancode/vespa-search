@@ -19,7 +19,6 @@ services, a NextJS frontend, and an MCP-powered CodeWiki generated during ingest
 ## Local development
 ### Backend (Rust)
 ```bash
-cd backend
 cargo run
 ```
 
@@ -48,15 +47,8 @@ This repo includes a GitHub Actions workflow to deploy the Rust backend to Fly.i
 
 The workflow will build and deploy the backend on pushes to `main`.
 
-If you deploy manually with `flyctl`, run from the repo root and keep the build context aligned:
+If you deploy manually with `flyctl`, run from the repo root:
 
 ```bash
-flyctl deploy --config backend/fly.toml --remote-only
-```
-
-If you prefer deploying from inside `backend/`, use the backend-scoped config and Dockerfile:
-
-```bash
-cd backend
-flyctl deploy --config fly.backend.toml --remote-only
+flyctl deploy --config fly.toml --remote-only
 ```
