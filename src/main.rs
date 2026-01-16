@@ -13,7 +13,10 @@ use std::{
 };
 use thiserror::Error;
 use tokio::{fs, process::Command, sync::RwLock};
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::{
+    cors::{Any, CorsLayer},
+    services::ServeDir,
+};
 use tracing::{error, info};
 use uuid::Uuid;
 
@@ -132,6 +135,7 @@ async fn main() -> Result<(), AppError> {
         registry: Arc::new(RwLock::new(registry)),
     };
 
+    let static_dir = base_path.join("frontend/out");
     let app = Router::new()
         .route("/repos", post(create_repo).get(list_repos))
         .route("/repos/:id/index", post(index_repo))
@@ -139,6 +143,7 @@ async fn main() -> Result<(), AppError> {
         .route("/repos/:id/wiki", get(repo_wiki))
         .route("/search", post(search))
         .with_state(state)
+        .fallback_service(ServeDir::new(static_dir).append_index_html_on_directories(true))
         .layer(CorsLayer::new().allow_origin(Any).allow_methods(Any));
 
     let port = std::env::var("PORT")

@@ -31,6 +31,10 @@ npm run dev
 
 The frontend reads the backend base URL from `NEXT_PUBLIC_API_BASE` (defaults to `http://localhost:3001`).
 
+### Combined build
+The production Docker image builds the NextJS frontend as static assets and serves them from the Rust
+backend, so the deployed app runs on a single port.
+
 ## Backend API (starter)
 - `POST /repos` → register a repo URL.
 - `POST /repos/{id}/index` → clone, generate `vv/` artifacts, and mark ingestion complete.
@@ -38,14 +42,8 @@ The frontend reads the backend base URL from `NEXT_PUBLIC_API_BASE` (defaults to
 - `GET /repos/{id}/wiki` → CodeWiki markdown content.
 - `POST /search` → placeholder search endpoint (returns empty results for now).
 
-## Deployment (GitHub Actions)
-This repo includes a GitHub Actions workflow to deploy the Rust backend to Fly.io (free-tier friendly).
-
-1. Create a Fly.io app (example: `fly apps create vespa-code-search`).
-2. Add the Fly.io API token as a GitHub secret named `FLY_API_TOKEN`.
-3. Update the `FLY_APP_NAME` value in `.github/workflows/deploy-backend.yml`.
-
-The workflow will build and deploy the backend on pushes to `main`.
+## Deployment (Fly.io)
+This repo includes a single Docker image that builds both the Rust backend and the NextJS frontend.
 
 If you deploy manually with `flyctl`, run from the repo root:
 
