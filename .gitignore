@@ -1,0 +1,6 @@
+/node_modules
+/frontend/.next
+/backend/target
+/backend/data/registry.json
+/repos
+.DS_Store
