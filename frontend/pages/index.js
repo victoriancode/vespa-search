@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:3001';
+  process.env.NEXT_PUBLIC_API_BASE || 'https://vespa-search.fly.dev';
 
 export default function Home() {
   const [repoUrl, setRepoUrl] = useState('');
@@ -141,7 +141,7 @@ export default function Home() {
               Start ingestion
             </button>
             {status?.status === 'complete' && selected && (
-              <Link className="secondary" href={`/repo?id=${selected.id}`}>
+              <Link className="secondary" href={`/repos/${selected.id}`}>
                 View repo
               </Link>
             )}
