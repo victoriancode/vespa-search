@@ -1,4 +1,4 @@
-# fly.toml app configuration file generated for vespa-search on 2026-01-16T06:59:56Z
+# fly.toml app configuration file generated for vespa-search on 2026-01-16T07:24:38Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
@@ -7,10 +7,6 @@ app = 'vespa-search'
 primary_region = 'iad'
 
 [build]
-
-[env]
-  DATA_DIR = "/data"
-  PORT = "3001"
 
 [http_service]
   internal_port = 3001
