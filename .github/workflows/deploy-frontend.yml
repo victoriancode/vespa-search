@@ -39,6 +39,7 @@ jobs:
 
       - name: Build static site
         env:
+          NEXT_PUBLIC_API_BASE: https://vespa-search.fly.dev
           NEXT_PUBLIC_BASE_PATH: /${{ github.event.repository.name }}
         run: npm run build
 
