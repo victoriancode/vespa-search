@@ -5,7 +5,7 @@ on:
     branches: ["main"]
 
 env:
-  FLY_APP_NAME: "vespa-code-search"
+  FLY_APP_NAME: "vespa-search"
 
 jobs:
   deploy:
