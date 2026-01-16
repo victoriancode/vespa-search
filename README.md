@@ -53,3 +53,10 @@ If you deploy manually with `flyctl`, run from the repo root and keep the build 
 ```bash
 flyctl deploy --config backend/fly.toml --remote-only
 ```
+
+If you prefer deploying from inside `backend/`, use the backend-scoped config and Dockerfile:
+
+```bash
+cd backend
+flyctl deploy --config fly.backend.toml --remote-only
+```
