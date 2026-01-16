@@ -108,8 +108,18 @@ async fn main() -> Result<(), AppError> {
         .init();
 
     let base_path = std::env::current_dir()?;
-    let registry_path = base_path.join("data/registry.json");
-    let repos_path = base_path.join("repos");
+    let data_root = std::env::var("DATA_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            let default_data = PathBuf::from("/data");
+            if default_data.is_dir() {
+                default_data
+            } else {
+                base_path.clone()
+            }
+        });
+    let registry_path = data_root.join("data/registry.json");
+    let repos_path = data_root.join("repos");
 
     fs::create_dir_all(registry_path.parent().unwrap()).await?;
     fs::create_dir_all(&repos_path).await?;
@@ -131,8 +141,13 @@ async fn main() -> Result<(), AppError> {
         .with_state(state)
         .layer(CorsLayer::new().allow_origin(Any).allow_methods(Any));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await?;
-    info!("backend listening on :3001");
+    let port = std::env::var("PORT")
+        .ok()
+        .and_then(|value| value.parse::<u16>().ok())
+        .unwrap_or(3001);
+    let listen_address = format!("0.0.0.0:{port}");
+    let listener = tokio::net::TcpListener::bind(&listen_address).await?;
+    info!("backend listening on {}", listen_address);
     axum::serve(listener, app).await.map_err(AppError::Io)?;
     Ok(())
 }
