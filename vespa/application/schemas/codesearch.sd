@@ -53,6 +53,8 @@ schema codesearch {
       indexing: attribute | summary
       attribute {
         distance-metric: angular
+      }
+      index {
         hnsw {
           max-links-per-node: 16
           neighbors-to-explore-at-insert: 200
