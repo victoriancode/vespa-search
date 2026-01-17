@@ -5,8 +5,19 @@ The `schemas/codesearch.sd` schema reflects the fields described in the architec
 specification and includes a semantic rank profile for ANN search. The embedding tensor
 dimension is set to `x[768]`; update it to match the embedding model in use.
 
-To build a zip for deployment from the repository root:
+To build a zip for deployment from the repository root (so `services.xml` is at
+the root of the zip), run:
 
 ```sh
-zip -r vespa-application.zip vespa/application
+(cd vespa/application && zip -r ../../vespa-application.zip .)
 ```
+
+Alternatively, use the helper script:
+
+```sh
+./scripts/build_vespa_application_zip.sh
+```
+
+⚠️ Do **not** run `zip -r vespa-application.zip vespa/application` because that
+creates a zip with `services.xml` nested under `vespa/application/`, which Vespa
+rejects.
