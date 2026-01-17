@@ -139,7 +139,12 @@ async fn main() -> Result<(), AppError> {
         .route("/repos/:id/wiki", get(repo_wiki))
         .route("/search", post(search))
         .with_state(state)
-        .layer(CorsLayer::new().allow_origin(Any).allow_methods(Any));
+        .layer(
+            CorsLayer::new()
+                .allow_origin(Any)
+                .allow_methods(Any)
+                .allow_headers(Any),
+        );
 
     let port = std::env::var("PORT")
         .ok()
