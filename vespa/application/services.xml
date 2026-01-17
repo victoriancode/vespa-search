@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services version="1.0">
+  <container id="default" version="1.0">
+    <search/>
+    <document-api/>
+  </container>
+  <content id="codesearch" version="1.0">
+    <min-redundancy>1</min-redundancy>
+    <documents>
+      <document type="codesearch" mode="index"/>
+    </documents>
+    <nodes count="1"/>
+  </content>
+</services>
