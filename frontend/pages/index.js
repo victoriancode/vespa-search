@@ -141,7 +141,10 @@ export default function Home() {
               Start ingestion
             </button>
             {status?.status === 'complete' && selected && (
-              <Link className="secondary" href={`/repos/${selected.id}`}>
+              <Link
+                className="secondary"
+                href={{ pathname: '/repo', query: { id: selected.id } }}
+              >
                 View repo
               </Link>
             )}
