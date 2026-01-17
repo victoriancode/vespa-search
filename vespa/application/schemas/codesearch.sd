@@ -1,0 +1,81 @@
+schema codesearch {
+  document codesearch {
+    field repo_id type string {
+      indexing: attribute | summary
+    }
+    field repo_url type string {
+      indexing: attribute | summary
+    }
+    field repo_name type string {
+      indexing: attribute | summary
+    }
+    field repo_owner type string {
+      indexing: attribute | summary
+    }
+    field commit_sha type string {
+      indexing: attribute | summary
+    }
+    field branch type string {
+      indexing: attribute | summary
+    }
+    field file_path type string {
+      indexing: attribute | summary
+    }
+    field language type string {
+      indexing: attribute | summary
+    }
+    field license_spdx type string {
+      indexing: attribute | summary
+    }
+    field chunk_id type string {
+      indexing: attribute | summary
+    }
+    field chunk_hash type string {
+      indexing: attribute | summary
+    }
+    field line_start type int {
+      indexing: attribute | summary
+    }
+    field line_end type int {
+      indexing: attribute | summary
+    }
+    field symbol_names type array<string> {
+      indexing: attribute | summary
+    }
+    field content type string {
+      indexing: index | summary
+      index: enable-bm25
+    }
+    field content_sha type string {
+      indexing: attribute | summary
+    }
+    field embedding type tensor<float>(x[768]) {
+      indexing: attribute | summary
+      attribute {
+        distance-metric: angular
+        hnsw {
+          max-links-per-node: 16
+          neighbors-to-explore-at-insert: 200
+        }
+      }
+    }
+    field last_indexed_at type long {
+      indexing: attribute | summary
+    }
+  }
+
+  rank-profile semantic inherits default {
+    inputs {
+      query(query_embedding) tensor<float>(x[768])
+    }
+    first-phase {
+      expression: closeness(embedding)
+    }
+  }
+
+  rank-profile hybrid inherits semantic {
+    first-phase {
+      expression: closeness(embedding) + bm25(content)
+    }
+  }
+}
