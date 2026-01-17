@@ -50,7 +50,7 @@ schema codesearch {
       indexing: attribute | summary
     }
     field embedding type tensor<float>(x[768]) {
-      indexing: attribute | summary
+      indexing: attribute | index | summary
       attribute {
         distance-metric: angular
       }
