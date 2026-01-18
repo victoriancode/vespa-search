@@ -7,12 +7,13 @@ use axum::{
 };
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::{
     path::{Path as StdPath, PathBuf},
     sync::Arc,
 };
 use thiserror::Error;
-use tokio::{fs, process::Command, sync::RwLock};
+use tokio::{fs, io::AsyncWriteExt, process::Command, sync::RwLock};
 use tower_http::cors::{Any, CorsLayer};
 use tracing::{error, info};
 use uuid::Uuid;
@@ -75,6 +76,10 @@ struct AppState {
     registry_path: PathBuf,
     repos_path: PathBuf,
     registry: Arc<RwLock<Vec<RepoRecord>>>,
+    vespa_endpoint: String,
+    vespa_namespace: String,
+    vespa_document_type: String,
+    http_client: reqwest::Client,
 }
 
 #[derive(Error, Debug)]
@@ -87,6 +92,10 @@ enum AppError {
     Io(#[from] std::io::Error),
     #[error("serde error: {0}")]
     Serde(#[from] serde_json::Error),
+    #[error("vespa request error: {0}")]
+    VespaRequest(#[from] reqwest::Error),
+    #[error("vespa rejected request: {0}")]
+    VespaRejected(String),
 }
 
 impl IntoResponse for AppError {
@@ -120,6 +129,12 @@ async fn main() -> Result<(), AppError> {
         });
     let registry_path = data_root.join("data/registry.json");
     let repos_path = data_root.join("repos");
+    let vespa_endpoint =
+        std::env::var("VESPA_ENDPOINT").unwrap_or_else(|_| "http://localhost:8080".into());
+    let vespa_namespace =
+        std::env::var("VESPA_NAMESPACE").unwrap_or_else(|_| "codesearch".into());
+    let vespa_document_type =
+        std::env::var("VESPA_DOCUMENT_TYPE").unwrap_or_else(|_| "codesearch".into());
 
     fs::create_dir_all(registry_path.parent().unwrap()).await?;
     fs::create_dir_all(&repos_path).await?;
@@ -130,6 +145,10 @@ async fn main() -> Result<(), AppError> {
         registry_path,
         repos_path,
         registry: Arc::new(RwLock::new(registry)),
+        vespa_endpoint,
+        vespa_namespace,
+        vespa_document_type,
+        http_client: reqwest::Client::new(),
     };
 
     let app = Router::new()
@@ -249,6 +268,12 @@ async fn index_repo(
     );
     fs::write(vv_path.join("wiki/index.md"), wiki_content).await?;
 
+    write_status(&vv_path, "indexing", Some("Feeding documents to Vespa".into())).await?;
+    let indexed = feed_repo_to_vespa(&state, &record, &repo_path, &vv_path).await?;
+    info!(
+        "vespa feed completed for repo {} ({} documents)",
+        record.id, indexed
+    );
     write_status(&vv_path, "complete", Some("Ingestion complete".into())).await?;
 
     Ok(Json(StatusResponse {
@@ -350,6 +375,162 @@ async fn read_status(vv_path: &StdPath) -> Result<Json<StatusResponse>, AppError
     let data = fs::read(path).await?;
     let status = serde_json::from_slice(&data)?;
     Ok(Json(status))
+}
+
+async fn feed_repo_to_vespa(
+    state: &AppState,
+    record: &RepoRecord,
+    repo_path: &StdPath,
+    vv_path: &StdPath,
+) -> Result<usize, AppError> {
+    const MAX_CONTENT_BYTES: usize = 200_000;
+    const EMBEDDING_DIM: usize = 768;
+
+    let files = list_repo_files(repo_path).await?;
+    let embedding = vec![0.0_f32; EMBEDDING_DIM];
+    let mut indexed = 0usize;
+
+    let chunks_path = vv_path.join("chunks.jsonl");
+    let mut chunks_file = fs::OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(&chunks_path)
+        .await?;
+
+    for file_path in files {
+        let absolute_path = repo_path.join(&file_path);
+        let content_bytes = match fs::read(&absolute_path).await {
+            Ok(bytes) => bytes,
+            Err(err) => {
+                error!(
+                    "skipping file {} due to read error: {}",
+                    file_path.display(),
+                    err
+                );
+                continue;
+            }
+        };
+
+        if content_bytes.is_empty()
+            || content_bytes.len() > MAX_CONTENT_BYTES
+            || content_bytes.iter().any(|byte| *byte == 0)
+        {
+            continue;
+        }
+
+        let content = String::from_utf8_lossy(&content_bytes).to_string();
+        let line_end = content.lines().count().max(1) as i64;
+        let content_sha = sha256_hex(&content_bytes);
+        let chunk_id = sha256_hex(format!("{}:{}", record.id, file_path.display()).as_bytes());
+        let chunk_hash = sha256_hex(content.as_bytes());
+        let language = guess_language(&file_path);
+        let last_indexed_at = Utc::now().timestamp_millis();
+
+        let fields = serde_json::json!({
+            "repo_id": record.id,
+            "repo_url": record.repo_url,
+            "repo_name": record.name,
+            "repo_owner": record.owner,
+            "commit_sha": "unknown",
+            "branch": "main",
+            "file_path": file_path.to_string_lossy(),
+            "language": language,
+            "license_spdx": "unknown",
+            "chunk_id": chunk_id,
+            "chunk_hash": chunk_hash,
+            "line_start": 1,
+            "line_end": line_end,
+            "symbol_names": Vec::<String>::new(),
+            "content": content,
+            "content_sha": content_sha,
+            "embedding": { "values": embedding.clone() },
+            "last_indexed_at": last_indexed_at,
+        });
+
+        let doc_id = format!("{}-{}", record.id, chunk_id);
+        let response = state
+            .http_client
+            .put(vespa_document_url(state, &doc_id))
+            .json(&serde_json::json!({ "fields": fields }))
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let body = response.text().await.unwrap_or_default();
+            return Err(AppError::VespaRejected(body));
+        }
+
+        let chunk_entry = serde_json::json!({
+            "repo_id": record.id,
+            "file_path": file_path.to_string_lossy(),
+            "chunk_id": chunk_id,
+            "line_start": 1,
+            "line_end": line_end,
+            "content_sha": content_sha,
+        });
+        let serialized = serde_json::to_string(&chunk_entry)?;
+        chunks_file.write_all(serialized.as_bytes()).await?;
+        chunks_file.write_all(b"\n").await?;
+        indexed += 1;
+    }
+
+    Ok(indexed)
+}
+
+async fn list_repo_files(repo_path: &StdPath) -> Result<Vec<PathBuf>, AppError> {
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(repo_path)
+        .arg("ls-files")
+        .output()
+        .await
+        .map_err(AppError::Io)?;
+
+    if !output.status.success() {
+        return Err(AppError::Io(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "git ls-files failed",
+        )));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    Ok(stdout.lines().map(PathBuf::from).collect())
+}
+
+fn vespa_document_url(state: &AppState, doc_id: &str) -> String {
+    format!(
+        "{}/document/v1/{}/{}/docid/{}",
+        state.vespa_endpoint,
+        state.vespa_namespace,
+        state.vespa_document_type,
+        urlencoding::encode(doc_id)
+    )
+}
+
+fn sha256_hex(data: &[u8]) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(data);
+    hex::encode(hasher.finalize())
+}
+
+fn guess_language(path: &StdPath) -> String {
+    let extension = path.extension().and_then(|ext| ext.to_str()).unwrap_or("");
+    match extension {
+        "rs" => "rust",
+        "ts" => "typescript",
+        "tsx" => "typescript",
+        "js" => "javascript",
+        "jsx" => "javascript",
+        "py" => "python",
+        "go" => "go",
+        "java" => "java",
+        "rb" => "ruby",
+        "md" => "markdown",
+        "json" => "json",
+        "yml" | "yaml" => "yaml",
+        _ => "unknown",
+    }
+    .to_string()
 }
 
 fn parse_repo_url(repo_url: &str) -> Result<(String, String), AppError> {
