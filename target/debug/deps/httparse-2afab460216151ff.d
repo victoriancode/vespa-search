@@ -1,0 +1,10 @@
+/Users/chrismaxwell/code/vespa-search/target/debug/deps/libhttparse-2afab460216151ff.rmeta: /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/httparse-1.10.1/src/lib.rs /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/httparse-1.10.1/src/iter.rs /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/httparse-1.10.1/src/macros.rs /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/httparse-1.10.1/src/simd/mod.rs /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/httparse-1.10.1/src/simd/swar.rs /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/httparse-1.10.1/src/simd/neon.rs
+
+/Users/chrismaxwell/code/vespa-search/target/debug/deps/httparse-2afab460216151ff.d: /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/httparse-1.10.1/src/lib.rs /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/httparse-1.10.1/src/iter.rs /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/httparse-1.10.1/src/macros.rs /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/httparse-1.10.1/src/simd/mod.rs /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/httparse-1.10.1/src/simd/swar.rs /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/httparse-1.10.1/src/simd/neon.rs
+
+/Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/httparse-1.10.1/src/lib.rs:
+/Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/httparse-1.10.1/src/iter.rs:
+/Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/httparse-1.10.1/src/macros.rs:
+/Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/httparse-1.10.1/src/simd/mod.rs:
+/Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/httparse-1.10.1/src/simd/swar.rs:
+/Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/httparse-1.10.1/src/simd/neon.rs:

@@ -1,0 +1,9 @@
+/Users/chrismaxwell/code/vespa-search/target/debug/deps/libfutures_channel-a539a42cb1412acd.rmeta: /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-channel-0.3.31/src/lib.rs /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-channel-0.3.31/src/lock.rs /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-channel-0.3.31/src/mpsc/mod.rs /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-channel-0.3.31/src/mpsc/queue.rs /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-channel-0.3.31/src/oneshot.rs
+
+/Users/chrismaxwell/code/vespa-search/target/debug/deps/futures_channel-a539a42cb1412acd.d: /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-channel-0.3.31/src/lib.rs /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-channel-0.3.31/src/lock.rs /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-channel-0.3.31/src/mpsc/mod.rs /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-channel-0.3.31/src/mpsc/queue.rs /Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-channel-0.3.31/src/oneshot.rs
+
+/Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-channel-0.3.31/src/lib.rs:
+/Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-channel-0.3.31/src/lock.rs:
+/Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-channel-0.3.31/src/mpsc/mod.rs:
+/Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-channel-0.3.31/src/mpsc/queue.rs:
+/Users/chrismaxwell/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-channel-0.3.31/src/oneshot.rs:
