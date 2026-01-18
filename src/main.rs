@@ -88,6 +88,8 @@ enum AppError {
     InvalidRepoUrl,
     #[error("repo not found")]
     RepoNotFound,
+    #[error("config error: {0}")]
+    Config(String),
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
     #[error("serde error: {0}")]
@@ -103,10 +105,42 @@ impl IntoResponse for AppError {
         let status = match self {
             AppError::InvalidRepoUrl => StatusCode::BAD_REQUEST,
             AppError::RepoNotFound => StatusCode::NOT_FOUND,
-            AppError::Io(_) | AppError::Serde(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::Config(_) | AppError::Io(_) | AppError::Serde(_) => {
+                StatusCode::INTERNAL_SERVER_ERROR
+            }
         };
         let body = Json(serde_json::json!({"error": self.to_string()}));
         (status, body).into_response()
+    }
+}
+
+fn normalize_pem(value: &str) -> String {
+    value.replace("\\n", "\n")
+}
+
+fn build_http_client() -> Result<reqwest::Client, AppError> {
+    let cert = std::env::var("VESPA_CLIENT_CERT").ok();
+    let key = std::env::var("VESPA_CLIENT_KEY").ok();
+
+    match (cert, key) {
+        (None, None) => Ok(reqwest::Client::new()),
+        (Some(cert), Some(key)) => {
+            let cert = normalize_pem(&cert);
+            let key = normalize_pem(&key);
+            let mut identity_pem = Vec::with_capacity(cert.len() + key.len() + 2);
+            identity_pem.extend_from_slice(cert.as_bytes());
+            identity_pem.extend_from_slice(b"\n");
+            identity_pem.extend_from_slice(key.as_bytes());
+            let identity = reqwest::Identity::from_pem(&identity_pem)
+                .map_err(|err| AppError::Config(format!("invalid Vespa client cert/key: {err}")))?;
+            reqwest::Client::builder()
+                .identity(identity)
+                .build()
+                .map_err(|err| AppError::Config(format!("failed to build HTTP client: {err}")))
+        }
+        _ => Err(AppError::Config(
+            "both VESPA_CLIENT_CERT and VESPA_CLIENT_KEY must be set for mTLS".into(),
+        )),
     }
 }
 
@@ -148,7 +182,7 @@ async fn main() -> Result<(), AppError> {
         vespa_endpoint,
         vespa_namespace,
         vespa_document_type,
-        http_client: reqwest::Client::new(),
+        http_client: build_http_client()?,
     };
 
     let app = Router::new()
