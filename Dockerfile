@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM rust:1.79 as builder
+FROM rust:1.83 as builder
 WORKDIR /app
 COPY Cargo.toml ./
 RUN mkdir src && echo 'fn main() {}' > src/main.rs
