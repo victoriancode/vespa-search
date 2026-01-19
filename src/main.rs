@@ -154,7 +154,7 @@ fn load_pem_from_env_or_path(
 }
 
 fn build_http_client() -> Result<reqwest::Client, AppError> {
-    let ca_default = PathBuf::from("vespa/application/security/ca.pem");
+    let ca_default = PathBuf::from("vespa/application/security/clients.pem");
     let ca_cert = load_pem_from_env_or_path(
         "VESPA_CA_CERT",
         "VESPA_CA_CERT_PATH",

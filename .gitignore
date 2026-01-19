@@ -8,8 +8,8 @@
 /*.csr
 /*.srl
 vespa/application/security/*.pem
-!vespa/application/security/ca.pem
 !vespa/application/security/client.pem
+!vespa/application/security/clients.pem
 /ca.pem
 /client.key
 /client.pem
