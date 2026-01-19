@@ -139,7 +139,10 @@ fn load_pem_from_env_or_path(
             return Ok((Some(value), format!("{value_env} (inline)")));
         }
         let path = PathBuf::from(value);
-        return Ok((Some(read_pem_from_path(&path, label)?), format!("{value_env} (path)")));
+        return Ok((
+            Some(read_pem_from_path(&path, label)?),
+            format!("{value_env} (path)"),
+        ));
     }
 
     if let Ok(path) = std::env::var(path_env) {
@@ -166,9 +169,7 @@ fn build_http_client() -> Result<reqwest::Client, AppError> {
         "VESPA_CA_CERT_PATH",
         Some(ca_default),
         "Vespa CA cert",
-    )
-    ?
-    ;
+    )?;
     let ca_cert = ca_cert.ok_or_else(|| AppError::Config("missing Vespa CA cert".into()))?;
 
     let (cert, cert_source) = load_pem_from_env_or_path(
@@ -203,11 +204,7 @@ fn build_http_client() -> Result<reqwest::Client, AppError> {
         (Some(cert), Some(key)) => {
             let cert = normalize_pem(&cert);
             let key = normalize_pem(&key);
-            let mut identity_pem = Vec::with_capacity(cert.len() + key.len() + 2);
-            identity_pem.extend_from_slice(cert.as_bytes());
-            identity_pem.extend_from_slice(b"\n");
-            identity_pem.extend_from_slice(key.as_bytes());
-            let identity = reqwest::Identity::from_pem(&identity_pem)
+            let identity = reqwest::Identity::from_pkcs8_pem(cert.as_bytes(), key.as_bytes())
                 .map_err(|err| AppError::Config(format!("invalid Vespa client cert/key: {err}")))?;
             builder
                 .identity(identity)
@@ -222,9 +219,7 @@ fn build_http_client() -> Result<reqwest::Client, AppError> {
 
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
-    tracing_subscriber::fmt()
-        .with_env_filter("info")
-        .init();
+    tracing_subscriber::fmt().with_env_filter("info").init();
 
     let base_path = std::env::current_dir()?;
     let data_root = std::env::var("DATA_DIR")
@@ -241,8 +236,7 @@ async fn main() -> Result<(), AppError> {
     let repos_path = data_root.join("repos");
     let vespa_endpoint =
         std::env::var("VESPA_ENDPOINT").unwrap_or_else(|_| "http://localhost:8080".into());
-    let vespa_namespace =
-        std::env::var("VESPA_NAMESPACE").unwrap_or_else(|_| "codesearch".into());
+    let vespa_namespace = std::env::var("VESPA_NAMESPACE").unwrap_or_else(|_| "codesearch".into());
     let vespa_document_type =
         std::env::var("VESPA_DOCUMENT_TYPE").unwrap_or_else(|_| "codesearch".into());
 
@@ -369,7 +363,11 @@ async fn index_repo(
         "name": record.name,
         "indexed_at": Utc::now().to_rfc3339(),
     });
-    fs::write(vv_path.join("manifest.json"), serde_json::to_vec_pretty(&manifest)?).await?;
+    fs::write(
+        vv_path.join("manifest.json"),
+        serde_json::to_vec_pretty(&manifest)?,
+    )
+    .await?;
     fs::write(vv_path.join("chunks.jsonl"), "").await?;
 
     let wiki_content = format!(
@@ -378,7 +376,12 @@ async fn index_repo(
     );
     fs::write(vv_path.join("wiki/index.md"), wiki_content).await?;
 
-    write_status(&vv_path, "indexing", Some("Feeding documents to Vespa".into())).await?;
+    write_status(
+        &vv_path,
+        "indexing",
+        Some("Feeding documents to Vespa".into()),
+    )
+    .await?;
     let indexed = feed_repo_to_vespa(&state, &record, &repo_path, &vv_path).await?;
     info!(
         "vespa feed completed for repo {} ({} documents)",
@@ -430,9 +433,9 @@ async fn repo_wiki(
         .join(&record.name)
         .join("vv/wiki/index.md");
 
-    let content = fs::read_to_string(wiki_path).await.unwrap_or_else(|_| {
-        "# CodeWiki\n\nWiki content is not yet available.".to_string()
-    });
+    let content = fs::read_to_string(wiki_path)
+        .await
+        .unwrap_or_else(|_| "# CodeWiki\n\nWiki content is not yet available.".to_string());
     Ok(Json(WikiResponse { content }))
 }
 

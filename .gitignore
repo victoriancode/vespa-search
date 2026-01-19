@@ -7,11 +7,11 @@
 /*.key
 /*.csr
 /*.srl
+/vespa/local-security/
+/*.pem
 vespa/application/security/*.pem
-!vespa/application/security/client.pem
 !vespa/application/security/clients.pem
 /ca.pem
 /client.key
 /client.pem
 /ca.key
-client.key.pk8
