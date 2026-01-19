@@ -516,18 +516,13 @@ async fn search(
         return Ok(Json(SearchResponse { results: vec![] }));
     }
 
-    let where_clause = build_search_where(payload.repo_filter.as_deref());
-    let yql = format!(
-        "select repo_id, file_path, line_start, line_end, content from sources * where {};",
-        where_clause
-    );
+    let yql = build_search_yql(query, payload.repo_filter.as_deref());
 
     let response = state
         .http_client
         .post(vespa_search_url(&state))
         .json(&serde_json::json!({
             "yql": yql,
-            "query": query,
             "hits": 10,
         }))
         .send()
@@ -859,8 +854,8 @@ fn sha256_hex(data: &[u8]) -> String {
     hex::encode(hasher.finalize())
 }
 
-fn build_search_where(repo_filter: Option<&str>) -> String {
-    let mut clause = "userQuery()".to_string();
+fn build_search_yql(query: &str, repo_filter: Option<&str>) -> String {
+    let mut clause = format!("content contains \"{}\"", escape_yql_string(query));
     if let Some(repo_id) = repo_filter.and_then(|value| {
         let trimmed = value.trim();
         if trimmed.is_empty() {
@@ -873,7 +868,10 @@ fn build_search_where(repo_filter: Option<&str>) -> String {
         clause.push_str(&escape_yql_string(repo_id));
         clause.push('"');
     }
-    clause
+    format!(
+        "select repo_id, file_path, line_start, line_end, content from sources * where {};",
+        clause
+    )
 }
 
 fn escape_yql_string(value: &str) -> String {
