@@ -71,6 +71,39 @@ struct WikiResponse {
     content: String,
 }
 
+#[derive(Debug, Serialize)]
+struct VespaDocument {
+    put: String,
+    fields: VespaFields,
+}
+
+#[derive(Debug, Serialize)]
+struct VespaFields {
+    repo_id: String,
+    repo_url: String,
+    repo_name: String,
+    repo_owner: String,
+    commit_sha: String,
+    branch: String,
+    file_path: String,
+    language: String,
+    license_spdx: String,
+    chunk_id: String,
+    chunk_hash: String,
+    line_start: i32,
+    line_end: i32,
+    symbol_names: Vec<String>,
+    content: String,
+    content_sha: String,
+    embedding: VespaEmbedding,
+    last_indexed_at: i64,
+}
+
+#[derive(Debug, Serialize)]
+struct VespaEmbedding {
+    values: Vec<f32>,
+}
+
 #[derive(Clone)]
 struct AppState {
     registry_path: PathBuf,
@@ -637,41 +670,44 @@ async fn feed_repo_to_vespa(
         }
 
         let content = String::from_utf8_lossy(&content_bytes).to_string();
-        let line_end = content.lines().count().max(1) as i64;
+        let line_end = content.lines().count().max(1) as i32;
         let content_sha = sha256_hex(&content_bytes);
         let chunk_id = sha256_hex(format!("{}:{}", record.id, file_path.display()).as_bytes());
         let chunk_hash = sha256_hex(content.as_bytes());
         let language = guess_language(&file_path);
         let last_indexed_at = Utc::now().timestamp_millis();
 
-        let fields = serde_json::json!({
-            "repo_id": record.id,
-            "repo_url": record.repo_url,
-            "repo_name": record.name,
-            "repo_owner": record.owner,
-            "commit_sha": "unknown",
-            "branch": "main",
-            "file_path": file_path.to_string_lossy(),
-            "language": language,
-            "license_spdx": "unknown",
-            "chunk_id": chunk_id,
-            "chunk_hash": chunk_hash,
-            "line_start": 1,
-            "line_end": line_end,
-            "symbol_names": Vec::<String>::new(),
-            "content": content,
-            "content_sha": content_sha,
-            "embedding": { "values": embedding.clone() },
-            "last_indexed_at": last_indexed_at,
-        });
-
         let doc_id = format!("{}-{}", record.id, chunk_id);
         let vespa_doc_id = format!(
             "id:{}:{}::{}",
             state.vespa_namespace, state.vespa_document_type, doc_id
         );
-        let body = serde_json::json!({ "put": vespa_doc_id, "fields": fields });
-        let body_text = serde_json::to_string(&body)?;
+        let document = VespaDocument {
+            put: vespa_doc_id,
+            fields: VespaFields {
+                repo_id: record.id.clone(),
+                repo_url: record.repo_url.clone(),
+                repo_name: record.name.clone(),
+                repo_owner: record.owner.clone(),
+                commit_sha: "unknown".to_string(),
+                branch: "main".to_string(),
+                file_path: file_path.to_string_lossy().to_string(),
+                language,
+                license_spdx: "unknown".to_string(),
+                chunk_id,
+                chunk_hash,
+                line_start: 1,
+                line_end,
+                symbol_names: Vec::new(),
+                content,
+                content_sha,
+                embedding: VespaEmbedding {
+                    values: embedding.clone(),
+                },
+                last_indexed_at,
+            },
+        };
+        let body_text = serde_json::to_string(&document)?;
         let response = state
             .http_client
             .post(vespa_document_feed_url(state))
