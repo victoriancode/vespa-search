@@ -8,6 +8,9 @@ primary_region = 'iad'
 
 [build]
 
+[env]
+  VESPA_CLUSTER = 'kavia-chris.vespacodesearch.withchris-kavia'
+
 [http_service]
   internal_port = 3001
   force_https = true

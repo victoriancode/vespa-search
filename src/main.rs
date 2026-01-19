@@ -77,6 +77,7 @@ struct AppState {
     repos_path: PathBuf,
     registry: Arc<RwLock<Vec<RepoRecord>>>,
     vespa_endpoint: String,
+    vespa_cluster: String,
     vespa_namespace: String,
     vespa_document_type: String,
     http_client: reqwest::Client,
@@ -236,6 +237,8 @@ async fn main() -> Result<(), AppError> {
     let repos_path = data_root.join("repos");
     let vespa_endpoint =
         std::env::var("VESPA_ENDPOINT").unwrap_or_else(|_| "http://localhost:8080".into());
+    let vespa_cluster =
+        std::env::var("VESPA_CLUSTER").unwrap_or_else(|_| "codesearch".into());
     let vespa_namespace = std::env::var("VESPA_NAMESPACE").unwrap_or_else(|_| "codesearch".into());
     let vespa_document_type =
         std::env::var("VESPA_DOCUMENT_TYPE").unwrap_or_else(|_| "codesearch".into());
@@ -250,6 +253,7 @@ async fn main() -> Result<(), AppError> {
         repos_path,
         registry: Arc::new(RwLock::new(registry)),
         vespa_endpoint,
+        vespa_cluster,
         vespa_namespace,
         vespa_document_type,
         http_client: build_http_client()?,
@@ -800,7 +804,11 @@ fn should_skip_dir(name: &str) -> bool {
 }
 
 fn vespa_document_feed_url(state: &AppState) -> String {
-    format!("{}/document/v1/", state.vespa_endpoint.trim_end_matches('/'))
+    format!(
+        "{}/document/v1/?destinationCluster={}",
+        state.vespa_endpoint.trim_end_matches('/'),
+        state.vespa_cluster
+    )
 }
 
 fn vespa_search_url(state: &AppState) -> String {
