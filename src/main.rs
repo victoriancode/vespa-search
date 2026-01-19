@@ -72,8 +72,7 @@ struct WikiResponse {
 }
 
 #[derive(Debug, Serialize)]
-struct VespaDocument {
-    put: String,
+struct VespaPut {
     fields: VespaFields,
 }
 
@@ -680,12 +679,7 @@ async fn feed_repo_to_vespa(
         let content_sha_for_chunk = content_sha.clone();
 
         let doc_id = format!("{}-{}", record.id, chunk_id);
-        let vespa_doc_id = format!(
-            "id:{}:{}::{}",
-            state.vespa_namespace, state.vespa_document_type, doc_id
-        );
-        let document = VespaDocument {
-            put: vespa_doc_id,
+        let put = VespaPut {
             fields: VespaFields {
                 repo_id: record.id.clone(),
                 repo_url: record.repo_url.clone(),
@@ -709,10 +703,10 @@ async fn feed_repo_to_vespa(
                 last_indexed_at,
             },
         };
-        let body_text = serde_json::to_string(&document)?;
+        let body_text = serde_json::to_string(&put)?;
         let response = state
             .http_client
-            .post(vespa_document_feed_url(state))
+            .put(vespa_document_url(state, &doc_id))
             .header(reqwest::header::CONTENT_TYPE, "application/json; charset=utf-8")
             .header(reqwest::header::ACCEPT, "application/json")
             .body(body_text.clone())
@@ -841,11 +835,13 @@ fn should_skip_dir(name: &str) -> bool {
     )
 }
 
-fn vespa_document_feed_url(state: &AppState) -> String {
+fn vespa_document_url(state: &AppState, doc_id: &str) -> String {
     format!(
-        "{}/document/v1/?destinationCluster={}",
+        "{}/document/v1/{}/{}/docid/{}",
         state.vespa_endpoint.trim_end_matches('/'),
-        state.vespa_cluster
+        state.vespa_namespace,
+        state.vespa_document_type,
+        urlencoding::encode(doc_id)
     )
 }
 

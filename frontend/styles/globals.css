@@ -120,11 +120,22 @@ button:disabled {
   background: #f8fafc;
   text-align: left;
   cursor: pointer;
+  color: #0f172a;
 }
 
 .repo-item.active {
   border-color: #2563eb;
   background: #eff6ff;
+}
+
+.repo-item strong {
+  color: #0f172a;
+}
+
+.repo-item span {
+  color: #475569;
+  font-size: 13px;
+  word-break: break-all;
 }
 
 .progress {
