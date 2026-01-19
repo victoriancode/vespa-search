@@ -372,94 +372,23 @@ async fn index_repo(
     let repo_path = state.repos_path.join(&record.owner).join(&record.name);
     let vv_path = repo_path.join("vv");
 
-    write_status(&vv_path, "in_progress", Some("Cloning repository".into())).await?;
-
-    if repo_path.exists() && !repo_path.join(".git").exists() {
-        if is_dir_empty(&repo_path).await? {
-            fs::remove_dir(&repo_path).await?;
-        } else if dir_contains_only_vv(&repo_path).await? {
-            warn!(
-                "repo path {} contains only vv artifacts, removing for re-clone",
-                repo_path.display()
-            );
-            fs::remove_dir_all(&vv_path).await.ok();
-            if is_dir_empty(&repo_path).await? {
-                fs::remove_dir(&repo_path).await?;
-            }
+    write_status(&vv_path, "in_progress", Some("Ingestion queued".into())).await?;
+    let state_clone = state.clone();
+    let record_clone = record.clone();
+    let repo_path_clone = repo_path.clone();
+    let vv_path_clone = vv_path.clone();
+    tokio::spawn(async move {
+        if let Err(err) =
+            ingest_repo(state_clone, record_clone, repo_path_clone, vv_path_clone).await
+        {
+            error!("ingestion failed for repo {}: {}", record.id, err);
+            let _ = write_status(&vv_path, "error", Some(err.to_string())).await;
         }
-
-        if repo_path.exists() {
-            write_status(
-                &vv_path,
-                "error",
-                Some("Repo path exists but is not a git repository".into()),
-            )
-            .await?;
-            return Err(AppError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "repo path exists but is not a git repository",
-            )));
-        }
-    }
-
-    if !repo_path.exists() {
-        fs::create_dir_all(repo_path.parent().unwrap()).await?;
-        let status = Command::new("git")
-            .arg("clone")
-            .arg(&record.repo_url)
-            .arg(&repo_path)
-            .status()
-            .await
-            .map_err(AppError::Io)?;
-
-        if !status.success() {
-            write_status(&vv_path, "error", Some("Git clone failed".into())).await?;
-            return Err(AppError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "git clone failed",
-            )));
-        }
-    }
-
-    fs::create_dir_all(&vv_path).await?;
-    fs::create_dir_all(vv_path.join("vectors")).await?;
-    fs::create_dir_all(vv_path.join("wiki")).await?;
-
-    let manifest = serde_json::json!({
-        "repo_url": record.repo_url,
-        "owner": record.owner,
-        "name": record.name,
-        "indexed_at": Utc::now().to_rfc3339(),
     });
-    fs::write(
-        vv_path.join("manifest.json"),
-        serde_json::to_vec_pretty(&manifest)?,
-    )
-    .await?;
-    fs::write(vv_path.join("chunks.jsonl"), "").await?;
-
-    let wiki_content = format!(
-        "# CodeWiki for {}/{}\n\nThis is a placeholder wiki generated during ingestion.\n",
-        record.owner, record.name
-    );
-    fs::write(vv_path.join("wiki/index.md"), wiki_content).await?;
-
-    write_status(
-        &vv_path,
-        "indexing",
-        Some("Feeding documents to Vespa".into()),
-    )
-    .await?;
-    let indexed = feed_repo_to_vespa(&state, &record, &repo_path, &vv_path).await?;
-    info!(
-        "vespa feed completed for repo {} ({} documents)",
-        record.id, indexed
-    );
-    write_status(&vv_path, "complete", Some("Ingestion complete".into())).await?;
 
     Ok(Json(StatusResponse {
-        status: "complete".into(),
-        message: Some("Ingestion complete".into()),
+        status: "in_progress".into(),
+        message: Some("Ingestion started".into()),
     }))
 }
 
@@ -624,6 +553,100 @@ async fn read_status(vv_path: &StdPath) -> Result<Json<StatusResponse>, AppError
     let data = fs::read(path).await?;
     let status = serde_json::from_slice(&data)?;
     Ok(Json(status))
+}
+
+async fn ingest_repo(
+    state: AppState,
+    record: RepoRecord,
+    repo_path: PathBuf,
+    vv_path: PathBuf,
+) -> Result<(), AppError> {
+    write_status(&vv_path, "in_progress", Some("Cloning repository".into())).await?;
+
+    if repo_path.exists() && !repo_path.join(".git").exists() {
+        if is_dir_empty(&repo_path).await? {
+            fs::remove_dir(&repo_path).await?;
+        } else if dir_contains_only_vv(&repo_path).await? {
+            warn!(
+                "repo path {} contains only vv artifacts, removing for re-clone",
+                repo_path.display()
+            );
+            fs::remove_dir_all(&vv_path).await.ok();
+            if is_dir_empty(&repo_path).await? {
+                fs::remove_dir(&repo_path).await?;
+            }
+        }
+
+        if repo_path.exists() {
+            write_status(
+                &vv_path,
+                "error",
+                Some("Repo path exists but is not a git repository".into()),
+            )
+            .await?;
+            return Err(AppError::Io(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "repo path exists but is not a git repository",
+            )));
+        }
+    }
+
+    if !repo_path.exists() {
+        fs::create_dir_all(repo_path.parent().unwrap()).await?;
+        let status = Command::new("git")
+            .arg("clone")
+            .arg(&record.repo_url)
+            .arg(&repo_path)
+            .status()
+            .await
+            .map_err(AppError::Io)?;
+
+        if !status.success() {
+            write_status(&vv_path, "error", Some("Git clone failed".into())).await?;
+            return Err(AppError::Io(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "git clone failed",
+            )));
+        }
+    }
+
+    fs::create_dir_all(&vv_path).await?;
+    fs::create_dir_all(vv_path.join("vectors")).await?;
+    fs::create_dir_all(vv_path.join("wiki")).await?;
+
+    let manifest = serde_json::json!({
+        "repo_url": record.repo_url,
+        "owner": record.owner,
+        "name": record.name,
+        "indexed_at": Utc::now().to_rfc3339(),
+    });
+    fs::write(
+        vv_path.join("manifest.json"),
+        serde_json::to_vec_pretty(&manifest)?,
+    )
+    .await?;
+    fs::write(vv_path.join("chunks.jsonl"), "").await?;
+
+    let wiki_content = format!(
+        "# CodeWiki for {}/{}\n\nThis is a placeholder wiki generated during ingestion.\n",
+        record.owner, record.name
+    );
+    fs::write(vv_path.join("wiki/index.md"), wiki_content).await?;
+
+    write_status(
+        &vv_path,
+        "indexing",
+        Some("Feeding documents to Vespa".into()),
+    )
+    .await?;
+    let indexed = feed_repo_to_vespa(&state, &record, &repo_path, &vv_path).await?;
+    info!(
+        "vespa feed completed for repo {} ({} documents)",
+        record.id, indexed
+    );
+    write_status(&vv_path, "complete", Some("Ingestion complete".into())).await?;
+
+    Ok(())
 }
 
 async fn feed_repo_to_vespa(
