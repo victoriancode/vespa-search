@@ -703,20 +703,21 @@ async fn feed_repo_to_vespa(
                 last_indexed_at,
             },
         };
-        let body_text = serde_json::to_string(&put)?;
+        let body_bytes = serde_json::to_vec(&put)?;
         let response = state
             .http_client
             .put(vespa_document_url(state, &doc_id))
+            .header(reqwest::header::CONTENT_TYPE, "application/json")
             .header(reqwest::header::ACCEPT, "application/json")
-            .json(&put)
+            .body(body_bytes.clone())
             .send()
             .await?;
 
         if !response.status().is_success() {
             let status = response.status();
             let body = response.text().await.unwrap_or_default();
-            let preview_len = body_text.len().min(1024);
-            let preview = &body_text[..preview_len];
+            let preview_len = body_bytes.len().min(1024);
+            let preview = String::from_utf8_lossy(&body_bytes[..preview_len]);
             let response_preview: String = body.chars().take(1024).collect();
             error!(
                 "vespa feed rejected (status {}), request preview: {}, response: {}",
