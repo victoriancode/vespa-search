@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || 'https://vespa-search.fly.dev';
+const GITHUB_ORG = process.env.NEXT_PUBLIC_GITHUB_ORG || 'victoriancode';
 
 export default function Home() {
   const [repoUrl, setRepoUrl] = useState('');
@@ -13,9 +14,37 @@ export default function Home() {
   const [error, setError] = useState('');
 
   const fetchRepos = async () => {
-    const res = await fetch(`${API_BASE}/repos`);
+    const res = await fetch(
+      `https://api.github.com/orgs/${GITHUB_ORG}/repos?per_page=100`
+    );
+    if (!res.ok) {
+      throw new Error('Unable to load mirrored repositories');
+    }
     const data = await res.json();
-    setRepos(data);
+    const mirrors = data.filter((repo) => repo.name.endsWith('-vv-search'));
+    const hydrated = await Promise.all(
+      mirrors.map(async (repo) => {
+        const branch = repo.default_branch || 'main';
+        const stateUrl = `https://raw.githubusercontent.com/${GITHUB_ORG}/${repo.name}/${branch}/.vv/state.json`;
+        const stateRes = await fetch(stateUrl);
+        if (!stateRes.ok) {
+          return null;
+        }
+        const state = await stateRes.json();
+        if (!state.repo_id) {
+          return null;
+        }
+        return {
+          id: state.repo_id,
+          repo_url: state.repo_url,
+          owner: state.owner,
+          name: state.name,
+          mirror_repo: repo.name,
+          mirror_url: repo.html_url
+        };
+      })
+    );
+    setRepos(hydrated.filter(Boolean));
   };
 
   const fetchStatus = async (repoId) => {
@@ -26,7 +55,7 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchRepos();
+    fetchRepos().catch((err) => setError(err.message));
   }, []);
 
   useEffect(() => {
@@ -52,7 +81,19 @@ export default function Home() {
       }
       const data = await res.json();
       setRepoUrl('');
-      await fetchRepos();
+      setRepos((prev) => {
+        if (prev.some((repo) => repo.id === data.id)) {
+          return prev;
+        }
+        return [
+          {
+            ...data,
+            mirror_repo: `${data.name}-vv-search`,
+            mirror_url: `https://github.com/${GITHUB_ORG}/${data.name}-vv-search`
+          },
+          ...prev
+        ];
+      });
       setSelected(data);
     } catch (err) {
       setError(err.message);

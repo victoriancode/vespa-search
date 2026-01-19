@@ -725,6 +725,62 @@ async fn mirror_repo_to_github(
     Ok(())
 }
 
+async fn write_vv_state(repo_path: &StdPath, record: &RepoRecord) -> Result<PathBuf, AppError> {
+    let vv_path = repo_path.join(".vv");
+    fs::create_dir_all(&vv_path).await?;
+    let payload = serde_json::json!({
+        "repo_id": record.id,
+        "repo_url": record.repo_url,
+        "owner": record.owner,
+        "name": record.name,
+        "mirror_repo": format!("{}-vv-search", record.name),
+        "updated_at": Utc::now().to_rfc3339(),
+    });
+    let state_path = vv_path.join("state.json");
+    fs::write(&state_path, serde_json::to_vec_pretty(&payload)?).await?;
+    Ok(state_path)
+}
+
+async fn commit_vv_state(repo_path: &StdPath, state_path: &StdPath) -> Result<(), AppError> {
+    let _ = run_git_command(Some(repo_path), &["config", "user.email", "vv-search@users.noreply.github.com"]).await?;
+    let _ = run_git_command(Some(repo_path), &["config", "user.name", "vv-search"]).await?;
+
+    let state_path_str = state_path.to_string_lossy();
+    let output = run_git_command(
+        Some(repo_path),
+        &["add", "-f", state_path_str.as_ref()],
+    )
+    .await?;
+    if !output.status.success() {
+        return Err(AppError::GitHub(
+            "failed to stage .vv state file".into(),
+        ));
+    }
+
+    let diff_output = run_git_command(Some(repo_path), &["diff", "--cached", "--quiet"]).await?;
+    if diff_output.status.code() == Some(0) {
+        return Ok(());
+    }
+    if diff_output.status.code() != Some(1) {
+        return Err(AppError::GitHub(
+            "failed to inspect staged changes for .vv state".into(),
+        ));
+    }
+
+    let output = run_git_command(
+        Some(repo_path),
+        &["commit", "-m", "chore: update vv state", "--", state_path_str.as_ref()],
+    )
+    .await?;
+    if !output.status.success() {
+        return Err(AppError::GitHub(
+            "failed to commit .vv state file".into(),
+        ));
+    }
+
+    Ok(())
+}
+
 async fn ingest_repo(
     state: AppState,
     record: RepoRecord,
@@ -788,6 +844,9 @@ async fn ingest_repo(
             )));
         }
     }
+
+    let vv_state_path = write_vv_state(&repo_path, &record).await?;
+    commit_vv_state(&repo_path, &vv_state_path).await?;
 
     write_status(
         &state,
@@ -974,7 +1033,8 @@ async fn dir_contains_only_vv(path: &StdPath) -> Result<bool, AppError> {
     let mut saw_entry = false;
     while let Some(entry) = entries.next_entry().await? {
         saw_entry = true;
-        if entry.file_name() != "vv" {
+        let name = entry.file_name();
+        if name != "vv" && name != ".vv" {
             return Ok(false);
         }
     }
@@ -992,7 +1052,12 @@ async fn list_repo_files(repo_path: &StdPath) -> Result<Vec<PathBuf>, AppError> 
     if let Ok(output) = output {
         if output.status.success() {
             let stdout = String::from_utf8_lossy(&output.stdout);
-            return Ok(stdout.lines().map(PathBuf::from).collect());
+            let files = stdout
+                .lines()
+                .filter(|line| *line != ".vv" && !line.starts_with(".vv/"))
+                .map(PathBuf::from)
+                .collect();
+            return Ok(files);
         }
 
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -1045,6 +1110,7 @@ fn should_skip_dir(name: &str) -> bool {
         name,
         ".git"
             | "vv"
+            | ".vv"
             | "node_modules"
             | "target"
             | "dist"
