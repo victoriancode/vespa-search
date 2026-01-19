@@ -11,7 +11,7 @@ WORKDIR /app
 ARG VESPA_CLIENT_CERT
 ARG VESPA_CLIENT_KEY
 ARG VESPA_CA_CERT
-RUN apt-get update && apt-get install -y ca-certificates libssl3 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ca-certificates git libssl3 && rm -rf /var/lib/apt/lists/*
 RUN mkdir -p /data
 RUN mkdir -p /app/vespa/application/security
 RUN if [ -n "$VESPA_CLIENT_CERT" ]; then echo "$VESPA_CLIENT_CERT" > /app/vespa/application/security/client.pem; fi

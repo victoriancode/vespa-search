@@ -136,26 +136,26 @@ fn load_pem_from_env_or_path(
 ) -> Result<(Option<String>, String), AppError> {
     if let Ok(value) = std::env::var(value_env) {
         if value.contains("-----BEGIN") {
-            return Ok((Some(value), format!("{value_env} (inline)")));
+            return Ok((Some(value), value_env.to_string()));
         }
         let path = PathBuf::from(value);
         return Ok((
             Some(read_pem_from_path(&path, label)?),
-            format!("{value_env} (path)"),
+            value_env.to_string(),
         ));
     }
 
     if let Ok(path) = std::env::var(path_env) {
         return Ok((
             Some(read_pem_from_path(&PathBuf::from(path), label)?),
-            format!("{path_env} (path)"),
+            path_env.to_string(),
         ));
     }
 
     if let Some(path) = default_path {
         return Ok((
             Some(read_pem_from_path(&path, label)?),
-            format!("default path {}", path.display()),
+            "default path".into(),
         ));
     }
 
