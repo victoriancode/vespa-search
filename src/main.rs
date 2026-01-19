@@ -710,7 +710,7 @@ async fn feed_repo_to_vespa(
         let body_bytes = serde_json::to_vec(&put)?;
         let response = state
             .http_client
-            .put(vespa_document_url(state, &doc_id))
+            .post(vespa_document_url(state, &doc_id))
             .header(reqwest::header::CONTENT_TYPE, "application/json")
             .header(reqwest::header::ACCEPT, "application/json")
             .body(body_bytes.clone())
