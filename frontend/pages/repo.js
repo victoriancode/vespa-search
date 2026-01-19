@@ -9,7 +9,6 @@ export default function RepoWiki() {
   const router = useRouter();
   const { id } = router.query;
   const [wiki, setWiki] = useState('');
-  const [searchEnabled, setSearchEnabled] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -60,12 +59,6 @@ export default function RepoWiki() {
           <Link href="/" className="secondary">
             Back to repos
           </Link>
-          <button
-            className="primary"
-            onClick={() => setSearchEnabled((prev) => !prev)}
-          >
-            {searchEnabled ? 'Hide search' : 'Enable search'}
-          </button>
         </div>
       </header>
 
@@ -74,41 +67,39 @@ export default function RepoWiki() {
           <pre>{wiki}</pre>
         </section>
 
-        {searchEnabled && (
-          <section className="card search">
-            <h2>Search this repo</h2>
-            <form onSubmit={handleSearch} className="form search-form">
-              <input
-                type="text"
-                placeholder="Search for functions, files, or concepts"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-              />
-              <button type="submit" disabled={searching || !query.trim()}>
-                {searching ? 'Searching...' : 'Search'}
-              </button>
-            </form>
-            {searchError && <p className="error">{searchError}</p>}
-            {!searchError && results.length === 0 && !searching && (
-              <p className="status">No results yet. Try a different query.</p>
-            )}
-            {results.length > 0 && (
-              <div className="search-results">
-                {results.map((result, index) => (
-                  <div className="search-result" key={`${result.file_path}-${index}`}>
-                    <div className="search-meta">
-                      <strong>{result.file_path}</strong>
-                      <span>
-                        Lines {result.line_start}-{result.line_end}
-                      </span>
-                    </div>
-                    <pre>{result.snippet}</pre>
+        <section className="card search">
+          <h2>Search this repo</h2>
+          <form onSubmit={handleSearch} className="form search-form">
+            <input
+              type="text"
+              placeholder="Search for functions, files, or concepts"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+            <button type="submit" disabled={searching || !query.trim()}>
+              {searching ? 'Searching...' : 'Search'}
+            </button>
+          </form>
+          {searchError && <p className="error">{searchError}</p>}
+          {!searchError && results.length === 0 && !searching && (
+            <p className="status">No results yet. Try a different query.</p>
+          )}
+          {results.length > 0 && (
+            <div className="search-results">
+              {results.map((result, index) => (
+                <div className="search-result" key={`${result.file_path}-${index}`}>
+                  <div className="search-meta">
+                    <strong>{result.file_path}</strong>
+                    <span>
+                      Lines {result.line_start}-{result.line_end}
+                    </span>
                   </div>
-                ))}
-              </div>
-            )}
-          </section>
-        )}
+                  <pre>{result.snippet}</pre>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </main>
     </div>
   );

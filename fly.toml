@@ -11,8 +11,6 @@ primary_region = 'iad'
 [env]
   GITHUB_ORG = 'victoriancode'
   VESPA_CLUSTER = 'codesearch'
-  VESPA_ENDPOINT = 'https://dac153da.fe1f2098.z.vespa-app.cloud'
-  VESPA_DOCUMENT_ENDPOINT = 'https://dac153da.fe1f2098.z.vespa-app.cloud'
 
 [http_service]
   internal_port = 3001

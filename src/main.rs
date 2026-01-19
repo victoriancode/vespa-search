@@ -292,10 +292,9 @@ async fn main() -> Result<(), AppError> {
         });
     let registry_path = data_root.join("data/registry.json");
     let repos_path = data_root.join("repos");
-    let vespa_endpoint = std::env::var("VESPA_ENDPOINT")
-        .map_err(|_| AppError::Config("VESPA_ENDPOINT must be set".into()))?;
-    let vespa_document_endpoint = std::env::var("VESPA_DOCUMENT_ENDPOINT")
-        .unwrap_or_else(|_| vespa_endpoint.clone());
+    let vespa_endpoint = std::env::var("VESPA_ENDPOINT").unwrap_or_default();
+    let vespa_document_endpoint =
+        std::env::var("VESPA_DOCUMENT_ENDPOINT").unwrap_or_else(|_| vespa_endpoint.clone());
     let vespa_cluster =
         std::env::var("VESPA_CLUSTER").unwrap_or_else(|_| "codesearch".into());
     let vespa_namespace = std::env::var("VESPA_NAMESPACE").unwrap_or_else(|_| "codesearch".into());
@@ -520,9 +519,10 @@ async fn search(
 
     let yql = build_search_yql(query, payload.repo_filter.as_deref());
 
+    let search_url = vespa_search_url(&state)?;
     let response = state
         .http_client
-        .post(vespa_search_url(&state))
+        .post(search_url)
         .json(&serde_json::json!({
             "yql": yql,
             "hits": 10,
@@ -924,9 +924,10 @@ async fn feed_repo_to_vespa(
             },
         };
         let body_bytes = serde_json::to_vec(&put)?;
+        let document_url = vespa_document_url(state, &doc_id)?;
         let response = state
             .http_client
-            .post(vespa_document_url(state, &doc_id))
+            .post(document_url)
             .header(reqwest::header::CONTENT_TYPE, "application/json")
             .header(reqwest::header::ACCEPT, "application/json")
             .body(body_bytes.clone())
@@ -1055,18 +1056,31 @@ fn should_skip_dir(name: &str) -> bool {
     )
 }
 
-fn vespa_document_url(state: &AppState, doc_id: &str) -> String {
-    format!(
+fn vespa_document_url(state: &AppState, doc_id: &str) -> Result<String, AppError> {
+    if state.vespa_document_endpoint.trim().is_empty() {
+        return Err(AppError::Config(
+            "VESPA_DOCUMENT_ENDPOINT or VESPA_ENDPOINT must be set".into(),
+        ));
+    }
+    Ok(format!(
         "{}/document/v1/{}/{}/docid/{}",
         state.vespa_document_endpoint.trim_end_matches('/'),
         state.vespa_namespace,
         state.vespa_document_type,
         urlencoding::encode(doc_id)
-    )
+    ))
 }
 
-fn vespa_search_url(state: &AppState) -> String {
-    format!("{}/search/", state.vespa_endpoint.trim_end_matches('/'))
+fn vespa_search_url(state: &AppState) -> Result<String, AppError> {
+    if state.vespa_endpoint.trim().is_empty() {
+        return Err(AppError::Config(
+            "VESPA_ENDPOINT must be set".into(),
+        ));
+    }
+    Ok(format!(
+        "{}/search/",
+        state.vespa_endpoint.trim_end_matches('/')
+    ))
 }
 
 fn sha256_hex(data: &[u8]) -> String {
