@@ -126,6 +126,8 @@ struct AppState {
     repos_path: PathBuf,
     registry: Arc<RwLock<Vec<RepoRecord>>>,
     status_tx: broadcast::Sender<IngestEvent>,
+    github_org: Option<String>,
+    github_token: Option<String>,
     vespa_endpoint: String,
     vespa_document_endpoint: String,
     vespa_cluster: String,
@@ -150,6 +152,8 @@ enum AppError {
     VespaRequest(#[from] reqwest::Error),
     #[error("vespa rejected request: {0}")]
     VespaRejected(String),
+    #[error("github error: {0}")]
+    GitHub(String),
 }
 
 impl IntoResponse for AppError {
@@ -160,7 +164,9 @@ impl IntoResponse for AppError {
             AppError::Config(_) | AppError::Io(_) | AppError::Serde(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
             }
-            AppError::VespaRequest(_) | AppError::VespaRejected(_) => StatusCode::BAD_GATEWAY,
+            AppError::VespaRequest(_) | AppError::VespaRejected(_) | AppError::GitHub(_) => {
+                StatusCode::BAD_GATEWAY
+            }
         };
         let body = Json(serde_json::json!({"error": self.to_string()}));
         (status, body).into_response()
@@ -286,8 +292,8 @@ async fn main() -> Result<(), AppError> {
         });
     let registry_path = data_root.join("data/registry.json");
     let repos_path = data_root.join("repos");
-    let vespa_endpoint =
-        std::env::var("VESPA_ENDPOINT").unwrap_or_else(|_| "http://localhost:8080".into());
+    let vespa_endpoint = std::env::var("VESPA_ENDPOINT")
+        .map_err(|_| AppError::Config("VESPA_ENDPOINT must be set".into()))?;
     let vespa_document_endpoint = std::env::var("VESPA_DOCUMENT_ENDPOINT")
         .unwrap_or_else(|_| vespa_endpoint.clone());
     let vespa_cluster =
@@ -295,6 +301,8 @@ async fn main() -> Result<(), AppError> {
     let vespa_namespace = std::env::var("VESPA_NAMESPACE").unwrap_or_else(|_| "codesearch".into());
     let vespa_document_type =
         std::env::var("VESPA_DOCUMENT_TYPE").unwrap_or_else(|_| "codesearch".into());
+    let github_org = std::env::var("GITHUB_ORG").ok();
+    let github_token = std::env::var("GITHUB_TOKEN").ok();
 
     fs::create_dir_all(registry_path.parent().unwrap()).await?;
     fs::create_dir_all(&repos_path).await?;
@@ -307,6 +315,8 @@ async fn main() -> Result<(), AppError> {
         repos_path,
         registry: Arc::new(RwLock::new(registry)),
         status_tx,
+        github_org,
+        github_token,
         vespa_endpoint,
         vespa_document_endpoint,
         vespa_cluster,
@@ -626,6 +636,95 @@ async fn read_status(vv_path: &StdPath) -> Result<Json<StatusResponse>, AppError
     Ok(Json(status))
 }
 
+async fn run_git_command(
+    cwd: Option<&StdPath>,
+    args: &[&str],
+) -> Result<std::process::Output, AppError> {
+    let mut command = Command::new("git");
+    command.env("GIT_TERMINAL_PROMPT", "0");
+    if let Some(path) = cwd {
+        command.arg("-C").arg(path);
+    }
+    command.args(args);
+    command.output().await.map_err(AppError::Io)
+}
+
+async fn ensure_github_repo(
+    state: &AppState,
+    org: &str,
+    token: &str,
+    repo_name: &str,
+) -> Result<(), AppError> {
+    let response = state
+        .http_client
+        .post(format!("https://api.github.com/orgs/{org}/repos"))
+        .header("Authorization", format!("token {token}"))
+        .header("Accept", "application/vnd.github+json")
+        .header("User-Agent", "vespa-code-search")
+        .json(&serde_json::json!({
+            "name": repo_name,
+            "private": false,
+        }))
+        .send()
+        .await?;
+
+    if response.status().is_success() {
+        return Ok(());
+    }
+
+    let status = response.status();
+    let body = response.text().await.unwrap_or_default();
+    if status == StatusCode::UNPROCESSABLE_ENTITY && body.contains("name already exists") {
+        return Ok(());
+    }
+
+    Err(AppError::GitHub(format!(
+        "failed to create GitHub repo {org}/{repo_name}: {status} {body}"
+    )))
+}
+
+async fn mirror_repo_to_github(
+    state: &AppState,
+    record: &RepoRecord,
+    repo_path: &StdPath,
+) -> Result<(), AppError> {
+    let org = state.github_org.as_deref().ok_or_else(|| {
+        AppError::Config("GITHUB_ORG is required for repo mirroring".into())
+    })?;
+    let token = state.github_token.as_deref().ok_or_else(|| {
+        AppError::Config("GITHUB_TOKEN is required for repo mirroring".into())
+    })?;
+    let mirror_name = format!("{}-vv-search", record.name);
+
+    ensure_github_repo(state, org, token, &mirror_name).await?;
+
+    let remote_url = format!(
+        "https://x-access-token:{}@github.com/{}/{}.git",
+        token, org, mirror_name
+    );
+
+    let _ = run_git_command(Some(repo_path), &["remote", "remove", "mirror"]).await;
+    let output = run_git_command(
+        Some(repo_path),
+        &["remote", "add", "mirror", &remote_url],
+    )
+    .await?;
+    if !output.status.success() {
+        return Err(AppError::GitHub(
+            "failed to add mirror remote for GitHub".into(),
+        ));
+    }
+
+    let output = run_git_command(Some(repo_path), &["push", "--mirror", "mirror"]).await?;
+    if !output.status.success() {
+        return Err(AppError::GitHub(
+            "failed to push mirror to GitHub".into(),
+        ));
+    }
+
+    Ok(())
+}
+
 async fn ingest_repo(
     state: AppState,
     record: RepoRecord,
@@ -673,29 +772,32 @@ async fn ingest_repo(
 
     if !repo_path.exists() {
         fs::create_dir_all(repo_path.parent().unwrap()).await?;
-        let status = Command::new("git")
-            .arg("clone")
-            .arg(&record.repo_url)
-            .arg(&repo_path)
-            .status()
-            .await
-            .map_err(AppError::Io)?;
-
-        if !status.success() {
-            write_status(
-                &state,
-                &vv_path,
-                &record.id,
-                "error",
-                Some("Git clone failed".into()),
-            )
-            .await?;
+        let repo_path_str = repo_path.to_string_lossy();
+        let output = run_git_command(
+            None,
+            &["clone", &record.repo_url, repo_path_str.as_ref()],
+        )
+        .await?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            let message = format!("Git clone failed: {}", stderr.trim());
+            write_status(&state, &vv_path, &record.id, "error", Some(message)).await?;
             return Err(AppError::Io(std::io::Error::new(
                 std::io::ErrorKind::Other,
                 "git clone failed",
             )));
         }
     }
+
+    write_status(
+        &state,
+        &vv_path,
+        &record.id,
+        "mirroring",
+        Some("Mirroring repository to GitHub".into()),
+    )
+    .await?;
+    mirror_repo_to_github(&state, &record, &repo_path).await?;
 
     fs::create_dir_all(&vv_path).await?;
     fs::create_dir_all(vv_path.join("vectors")).await?;
