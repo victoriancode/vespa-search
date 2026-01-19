@@ -869,7 +869,7 @@ fn build_search_where(repo_filter: Option<&str>) -> String {
             Some(trimmed)
         }
     }) {
-        clause.push_str(" and repo_id = \"");
+        clause.push_str(" and repo_id contains \"");
         clause.push_str(&escape_yql_string(repo_id));
         clause.push('"');
     }
