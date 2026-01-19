@@ -109,6 +109,7 @@ struct AppState {
     repos_path: PathBuf,
     registry: Arc<RwLock<Vec<RepoRecord>>>,
     vespa_endpoint: String,
+    vespa_document_endpoint: String,
     vespa_cluster: String,
     vespa_namespace: String,
     vespa_document_type: String,
@@ -269,6 +270,8 @@ async fn main() -> Result<(), AppError> {
     let repos_path = data_root.join("repos");
     let vespa_endpoint =
         std::env::var("VESPA_ENDPOINT").unwrap_or_else(|_| "http://localhost:8080".into());
+    let vespa_document_endpoint = std::env::var("VESPA_DOCUMENT_ENDPOINT")
+        .unwrap_or_else(|_| vespa_endpoint.clone());
     let vespa_cluster =
         std::env::var("VESPA_CLUSTER").unwrap_or_else(|_| "codesearch".into());
     let vespa_namespace = std::env::var("VESPA_NAMESPACE").unwrap_or_else(|_| "codesearch".into());
@@ -285,6 +288,7 @@ async fn main() -> Result<(), AppError> {
         repos_path,
         registry: Arc::new(RwLock::new(registry)),
         vespa_endpoint,
+        vespa_document_endpoint,
         vespa_cluster,
         vespa_namespace,
         vespa_document_type,
@@ -838,7 +842,7 @@ fn should_skip_dir(name: &str) -> bool {
 fn vespa_document_url(state: &AppState, doc_id: &str) -> String {
     format!(
         "{}/document/v1/{}/{}/docid/{}",
-        state.vespa_endpoint.trim_end_matches('/'),
+        state.vespa_document_endpoint.trim_end_matches('/'),
         state.vespa_namespace,
         state.vespa_document_type,
         urlencoding::encode(doc_id)

@@ -10,6 +10,7 @@ primary_region = 'iad'
 
 [env]
   VESPA_CLUSTER = 'codesearch'
+  VESPA_DOCUMENT_ENDPOINT = 'https://dac153da.fe1f2098.z.vespa-app.cloud:4443'
 
 [http_service]
   internal_port = 3001
