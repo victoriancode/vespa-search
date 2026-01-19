@@ -155,33 +155,24 @@ fn load_pem_from_env_or_path(
 
 fn build_http_client() -> Result<reqwest::Client, AppError> {
     let ca_default = PathBuf::from("vespa/application/security/ca.pem");
-    let ca_fallback = PathBuf::from("vespa/application/security/clients.pem");
     let ca_cert = load_pem_from_env_or_path(
         "VESPA_CA_CERT",
         "VESPA_CA_CERT_PATH",
-        Some(ca_default.clone()),
+        Some(ca_default),
         "Vespa CA cert",
     )
-    .or_else(|_| {
-        load_pem_from_env_or_path(
-            "VESPA_CA_CERT",
-            "VESPA_CA_CERT_PATH",
-            Some(ca_fallback),
-            "Vespa CA cert",
-        )
-    })?
     .ok_or_else(|| AppError::Config("missing Vespa CA cert".into()))?;
 
     let cert = load_pem_from_env_or_path(
         "VESPA_CLIENT_CERT",
         "VESPA_CLIENT_CERT_PATH",
-        None,
+        Some(PathBuf::from("vespa/application/security/client.pem")),
         "Vespa client cert",
     )?;
     let key = load_pem_from_env_or_path(
         "VESPA_CLIENT_KEY",
         "VESPA_CLIENT_KEY_PATH",
-        None,
+        Some(PathBuf::from("vespa/application/security/client.key")),
         "Vespa client key",
     )?;
 
