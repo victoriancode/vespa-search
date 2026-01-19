@@ -186,7 +186,7 @@ fn build_http_client() -> Result<reqwest::Client, AppError> {
     match (cert, key) {
         (None, None) => builder
             .build()
-            .map_err(|err| AppError::Config(format!("failed to build HTTP client: {err}"))),
+            .map_err(|err| AppError::Config(format!("failed to build HTTP client: {err:?}"))),
         (Some(cert), Some(key)) => {
             let cert = normalize_pem(&cert);
             let key = normalize_pem(&key);
@@ -199,7 +199,7 @@ fn build_http_client() -> Result<reqwest::Client, AppError> {
             builder
                 .identity(identity)
                 .build()
-                .map_err(|err| AppError::Config(format!("failed to build HTTP client: {err}")))
+                .map_err(|err| AppError::Config(format!("failed to build HTTP client: {err:?}")))
         }
         _ => Err(AppError::Config(
             "both VESPA_CLIENT_CERT and VESPA_CLIENT_KEY must be set for mTLS".into(),
