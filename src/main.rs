@@ -676,6 +676,8 @@ async fn feed_repo_to_vespa(
         let chunk_hash = sha256_hex(content.as_bytes());
         let language = guess_language(&file_path);
         let last_indexed_at = Utc::now().timestamp_millis();
+        let chunk_id_for_chunk = chunk_id.clone();
+        let content_sha_for_chunk = content_sha.clone();
 
         let doc_id = format!("{}-{}", record.id, chunk_id);
         let vespa_doc_id = format!(
@@ -731,12 +733,12 @@ async fn feed_repo_to_vespa(
         }
 
         let chunk_entry = serde_json::json!({
-            "repo_id": record.id,
+            "repo_id": record.id.clone(),
             "file_path": file_path.to_string_lossy(),
-            "chunk_id": chunk_id,
+            "chunk_id": chunk_id_for_chunk,
             "line_start": 1,
             "line_end": line_end,
-            "content_sha": content_sha,
+            "content_sha": content_sha_for_chunk,
         });
         let serialized = serde_json::to_string(&chunk_entry)?;
         chunks_file.write_all(serialized.as_bytes()).await?;
