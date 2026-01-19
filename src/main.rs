@@ -15,7 +15,7 @@ use std::{
 use thiserror::Error;
 use tokio::{fs, io::AsyncWriteExt, process::Command, sync::RwLock};
 use tower_http::cors::{Any, CorsLayer};
-use tracing::{error, info};
+use tracing::{error, info, warn};
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -596,18 +596,73 @@ async fn list_repo_files(repo_path: &StdPath) -> Result<Vec<PathBuf>, AppError> 
         .arg(repo_path)
         .arg("ls-files")
         .output()
-        .await
-        .map_err(AppError::Io)?;
+        .await;
 
-    if !output.status.success() {
-        return Err(AppError::Io(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "git ls-files failed",
-        )));
+    if let Ok(output) = output {
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            return Ok(stdout.lines().map(PathBuf::from).collect());
+        }
+
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        warn!(
+            "git ls-files failed for {}: {}",
+            repo_path.display(),
+            stderr.trim()
+        );
+    } else if let Err(err) = output {
+        warn!("git ls-files failed for {}: {}", repo_path.display(), err);
     }
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    Ok(stdout.lines().map(PathBuf::from).collect())
+    walk_repo_files(repo_path).await
+}
+
+async fn walk_repo_files(repo_path: &StdPath) -> Result<Vec<PathBuf>, AppError> {
+    let mut files = Vec::new();
+    let mut stack = vec![repo_path.to_path_buf()];
+
+    while let Some(dir) = stack.pop() {
+        let mut entries = fs::read_dir(&dir).await?;
+        while let Some(entry) = entries.next_entry().await? {
+            let path = entry.path();
+            let file_type = entry.file_type().await?;
+            let name = entry.file_name();
+            let name = name.to_string_lossy();
+
+            if file_type.is_dir() {
+                if should_skip_dir(&name) {
+                    continue;
+                }
+                stack.push(path);
+                continue;
+            }
+
+            if file_type.is_file() {
+                let relative = path.strip_prefix(repo_path).unwrap_or(&path);
+                if !relative.as_os_str().is_empty() {
+                    files.push(relative.to_path_buf());
+                }
+            }
+        }
+    }
+
+    Ok(files)
+}
+
+fn should_skip_dir(name: &str) -> bool {
+    matches!(
+        name,
+        ".git"
+            | "vv"
+            | "node_modules"
+            | "target"
+            | "dist"
+            | "build"
+            | ".next"
+            | ".venv"
+            | "venv"
+            | "__pycache__"
+    )
 }
 
 fn vespa_document_url(state: &AppState, doc_id: &str) -> String {
