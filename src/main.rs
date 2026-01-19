@@ -673,13 +673,13 @@ async fn feed_repo_to_vespa(
             .await?;
 
         if !response.status().is_success() {
+            let status = response.status();
             let body = response.text().await.unwrap_or_default();
             let preview_len = body_bytes.len().min(1024);
             let preview = String::from_utf8_lossy(&body_bytes[..preview_len]);
             error!(
                 "vespa feed rejected (status {}), request preview: {}",
-                response.status(),
-                preview
+                status, preview
             );
             return Err(AppError::VespaRejected(body));
         }
