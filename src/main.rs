@@ -334,6 +334,34 @@ async fn index_repo(
 
     write_status(&vv_path, "in_progress", Some("Cloning repository".into())).await?;
 
+    if repo_path.exists() && !repo_path.join(".git").exists() {
+        if is_dir_empty(&repo_path).await? {
+            fs::remove_dir(&repo_path).await?;
+        } else if dir_contains_only_vv(&repo_path).await? {
+            warn!(
+                "repo path {} contains only vv artifacts, removing for re-clone",
+                repo_path.display()
+            );
+            fs::remove_dir_all(&vv_path).await.ok();
+            if is_dir_empty(&repo_path).await? {
+                fs::remove_dir(&repo_path).await?;
+            }
+        }
+
+        if repo_path.exists() {
+            write_status(
+                &vv_path,
+                "error",
+                Some("Repo path exists but is not a git repository".into()),
+            )
+            .await?;
+            return Err(AppError::Io(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "repo path exists but is not a git repository",
+            )));
+        }
+    }
+
     if !repo_path.exists() {
         fs::create_dir_all(repo_path.parent().unwrap()).await?;
         let status = Command::new("git")
@@ -588,6 +616,23 @@ async fn feed_repo_to_vespa(
     }
 
     Ok(indexed)
+}
+
+async fn is_dir_empty(path: &StdPath) -> Result<bool, AppError> {
+    let mut entries = fs::read_dir(path).await?;
+    Ok(entries.next_entry().await?.is_none())
+}
+
+async fn dir_contains_only_vv(path: &StdPath) -> Result<bool, AppError> {
+    let mut entries = fs::read_dir(path).await?;
+    let mut saw_entry = false;
+    while let Some(entry) = entries.next_entry().await? {
+        saw_entry = true;
+        if entry.file_name() != "vv" {
+            return Ok(false);
+        }
+    }
+    Ok(saw_entry)
 }
 
 async fn list_repo_files(repo_path: &StdPath) -> Result<Vec<PathBuf>, AppError> {
