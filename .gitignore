@@ -14,3 +14,4 @@ vespa/application/security/*.pem
 /client.key
 /client.pem
 /ca.key
+client.key.pk8
