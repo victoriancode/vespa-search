@@ -707,9 +707,8 @@ async fn feed_repo_to_vespa(
         let response = state
             .http_client
             .put(vespa_document_url(state, &doc_id))
-            .header(reqwest::header::CONTENT_TYPE, "application/json; charset=utf-8")
             .header(reqwest::header::ACCEPT, "application/json")
-            .body(body_text.clone())
+            .json(&put)
             .send()
             .await?;
 
