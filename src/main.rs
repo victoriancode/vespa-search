@@ -124,13 +124,6 @@ struct VespaEmbedding {
 }
 
 #[derive(Clone)]
-struct EmbeddingProvider {
-    base_url: String,
-    model: String,
-    api_token: String,
-}
-
-#[derive(Clone)]
 struct AppState {
     registry_path: PathBuf,
     repos_path: PathBuf,
@@ -138,7 +131,6 @@ struct AppState {
     status_tx: broadcast::Sender<IngestEvent>,
     github_org: Option<String>,
     github_token: Option<String>,
-    embedding_provider: Option<EmbeddingProvider>,
     vespa_endpoint: String,
     vespa_document_endpoint: String,
     vespa_cluster: String,
@@ -165,8 +157,6 @@ enum AppError {
     VespaRejected(String),
     #[error("github error: {0}")]
     GitHub(String),
-    #[error("embedding error: {0}")]
-    Embedding(String),
 }
 
 impl IntoResponse for AppError {
@@ -177,10 +167,9 @@ impl IntoResponse for AppError {
             AppError::Config(_) | AppError::Io(_) | AppError::Serde(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
             }
-            AppError::VespaRequest(_)
-            | AppError::VespaRejected(_)
-            | AppError::GitHub(_)
-            | AppError::Embedding(_) => StatusCode::BAD_GATEWAY,
+            AppError::VespaRequest(_) | AppError::VespaRejected(_) | AppError::GitHub(_) => {
+                StatusCode::BAD_GATEWAY
+            }
         };
         let body = Json(serde_json::json!({"error": self.to_string()}));
         (status, body).into_response()
@@ -189,23 +178,6 @@ impl IntoResponse for AppError {
 
 fn normalize_pem(value: &str) -> String {
     value.replace("\\n", "\n")
-}
-
-fn build_embedding_provider() -> Option<EmbeddingProvider> {
-    let api_token = std::env::var("HUGGINGFACE_API_TOKEN")
-        .or_else(|_| std::env::var("HF_API_TOKEN"))
-        .ok()?;
-    let model = std::env::var("HUGGINGFACE_MODEL")
-        .or_else(|_| std::env::var("HF_MODEL"))
-        .unwrap_or_else(|_| "sentence-transformers/all-mpnet-base-v2".into());
-    let base_url = std::env::var("HUGGINGFACE_ENDPOINT")
-        .or_else(|_| std::env::var("HF_ENDPOINT"))
-        .unwrap_or_else(|_| "https://router.huggingface.co".into());
-    Some(EmbeddingProvider {
-        base_url,
-        model,
-        api_token,
-    })
 }
 
 fn read_pem_from_path(path: &PathBuf, label: &str) -> Result<String, AppError> {
@@ -333,7 +305,6 @@ async fn main() -> Result<(), AppError> {
         std::env::var("VESPA_DOCUMENT_TYPE").unwrap_or_else(|_| "codesearch".into());
     let github_org = std::env::var("GITHUB_ORG").ok();
     let github_token = std::env::var("GITHUB_TOKEN").ok();
-    let embedding_provider = build_embedding_provider();
 
     fs::create_dir_all(registry_path.parent().unwrap()).await?;
     fs::create_dir_all(&repos_path).await?;
@@ -348,7 +319,6 @@ async fn main() -> Result<(), AppError> {
         status_tx,
         github_org,
         github_token,
-        embedding_provider,
         vespa_endpoint,
         vespa_document_endpoint,
         vespa_cluster,
@@ -561,7 +531,7 @@ async fn search(
 
     if let Some(profile) = search_mode.profile_name() {
         let query_embedding = VespaEmbedding {
-            values: embed_query(&state, query).await?,
+            values: build_query_embedding(query, EMBEDDING_DIM),
         };
         let embedding_value = serde_json::to_value(&query_embedding)?;
         if let Some(object) = body.as_object_mut() {
@@ -960,6 +930,7 @@ async fn feed_repo_to_vespa(
     const MAX_CONTENT_BYTES: usize = 200_000;
 
     let files = list_repo_files(repo_path).await?;
+    let embedding = vec![0.0_f32; EMBEDDING_DIM];
     let mut indexed = 0usize;
 
     let chunks_path = vv_path.join("chunks.jsonl");
@@ -991,12 +962,6 @@ async fn feed_repo_to_vespa(
         }
 
         let content = String::from_utf8_lossy(&content_bytes).to_string();
-        let embedding_input = prepare_embedding_input(&content);
-        let embedding = embed_texts(state, &[embedding_input])
-            .await?
-            .into_iter()
-            .next()
-            .ok_or_else(|| AppError::Embedding("missing embedding response".into()))?;
         let line_end = content.lines().count().max(1) as i32;
         let content_sha = sha256_hex(&content_bytes);
         let chunk_id = sha256_hex(format!("{}:{}", record.id, file_path.display()).as_bytes());
@@ -1204,115 +1169,6 @@ fn sha256_hex(data: &[u8]) -> String {
     hex::encode(hasher.finalize())
 }
 
-fn prepare_embedding_input(value: &str) -> String {
-    const MAX_CHARS: usize = 4096;
-    value.trim().chars().take(MAX_CHARS).collect()
-}
-
-async fn embed_query(state: &AppState, query: &str) -> Result<Vec<f32>, AppError> {
-    let text = prepare_embedding_input(query);
-    let embeddings = embed_texts(state, &[text]).await?;
-    embeddings
-        .into_iter()
-        .next()
-        .ok_or_else(|| AppError::Embedding("missing query embedding".into()))
-}
-
-async fn embed_texts(
-    state: &AppState,
-    texts: &[String],
-) -> Result<Vec<Vec<f32>>, AppError> {
-    let provider = state.embedding_provider.as_ref().ok_or_else(|| {
-        AppError::Config("Embedding provider not configured".into())
-    })?;
-    let url = format!(
-        "{}/pipeline/feature-extraction/{}",
-        provider.base_url.trim_end_matches('/'),
-        provider.model
-    );
-    let response = state
-        .http_client
-        .post(url)
-        .header("Authorization", format!("Bearer {}", provider.api_token))
-        .header(reqwest::header::ACCEPT, "application/json")
-        .json(&serde_json::json!({
-            "inputs": texts,
-            "options": { "wait_for_model": true }
-        }))
-        .send()
-        .await?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        return Err(AppError::Embedding(format!(
-            "embedding request failed ({status}): {body}"
-        )));
-    }
-
-    let value: serde_json::Value = response.json().await?;
-    parse_embedding_response(value, texts.len())
-}
-
-fn parse_embedding_response(
-    value: serde_json::Value,
-    expected_items: usize,
-) -> Result<Vec<Vec<f32>>, AppError> {
-    let array = value
-        .as_array()
-        .ok_or_else(|| AppError::Embedding("unexpected embedding response".into()))?;
-
-    if array.is_empty() {
-        return Err(AppError::Embedding("empty embedding response".into()));
-    }
-
-    if array[0].is_number() {
-        let embedding = parse_embedding_vector(array)?;
-        if embedding.len() != EMBEDDING_DIM {
-            return Err(AppError::Embedding(format!(
-                "embedding dimension mismatch: expected {EMBEDDING_DIM}, got {}",
-                embedding.len()
-            )));
-        }
-        return Ok(vec![embedding]);
-    }
-
-    let mut embeddings = Vec::with_capacity(array.len());
-    for item in array {
-        let vector = item
-            .as_array()
-            .ok_or_else(|| AppError::Embedding("invalid embedding item".into()))?;
-        let embedding = parse_embedding_vector(vector)?;
-        if embedding.len() != EMBEDDING_DIM {
-            return Err(AppError::Embedding(format!(
-                "embedding dimension mismatch: expected {EMBEDDING_DIM}, got {}",
-                embedding.len()
-            )));
-        }
-        embeddings.push(embedding);
-    }
-
-    if embeddings.len() != expected_items {
-        return Err(AppError::Embedding(format!(
-            "embedding response size mismatch: expected {expected_items}, got {}",
-            embeddings.len()
-        )));
-    }
-
-    Ok(embeddings)
-}
-
-fn parse_embedding_vector(values: &[serde_json::Value]) -> Result<Vec<f32>, AppError> {
-    let mut embedding = Vec::with_capacity(values.len());
-    for value in values {
-        let number = value
-            .as_f64()
-            .ok_or_else(|| AppError::Embedding("non-numeric embedding value".into()))?;
-        embedding.push(number as f32);
-    }
-    Ok(embedding)
-}
-
 #[derive(Debug, Clone, Copy)]
 enum SearchMode {
     Hybrid,
@@ -1337,6 +1193,31 @@ fn resolve_search_mode(value: Option<&str>) -> SearchMode {
         "bm25" => SearchMode::Bm25,
         _ => SearchMode::Hybrid,
     }
+}
+
+fn build_query_embedding(query: &str, dims: usize) -> Vec<f32> {
+    let mut seed = Sha256::digest(query.as_bytes()).to_vec();
+    let mut values = Vec::with_capacity(dims);
+    let mut offset = 0usize;
+
+    while values.len() < dims {
+        if offset >= seed.len() {
+            seed = Sha256::digest(&seed).to_vec();
+            offset = 0;
+        }
+        let byte = seed[offset];
+        let value = (byte as f32 / 255.0) * 2.0 - 1.0;
+        values.push(value);
+        offset += 1;
+    }
+
+    let norm = values.iter().map(|v| v * v).sum::<f32>().sqrt();
+    if norm > 0.0 {
+        for value in &mut values {
+            *value /= norm;
+        }
+    }
+    values
 }
 
 fn build_search_yql(query: &str, repo_filter: Option<&str>) -> String {
