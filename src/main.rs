@@ -122,15 +122,19 @@ fn normalize_pem(value: &str) -> String {
 fn build_http_client() -> Result<reqwest::Client, AppError> {
     let cert = std::env::var("VESPA_CLIENT_CERT").ok();
     let key = std::env::var("VESPA_CLIENT_KEY").ok();
-    let ca_cert_path = std::env::var("VESPA_CA_CERT_PATH")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from("vespa/application/security/clients.pem"));
-    let ca_cert = std::fs::read_to_string(&ca_cert_path).map_err(|err| {
-        AppError::Config(format!(
-            "failed to read Vespa CA cert at {}: {err}",
-            ca_cert_path.display()
-        ))
-    })?;
+    let ca_cert = if let Ok(ca_cert) = std::env::var("VESPA_CA_CERT") {
+        ca_cert
+    } else {
+        let ca_cert_path = std::env::var("VESPA_CA_CERT_PATH")
+            .map(PathBuf::from)
+            .unwrap_or_else(|_| PathBuf::from("vespa/application/security/clients.pem"));
+        std::fs::read_to_string(&ca_cert_path).map_err(|err| {
+            AppError::Config(format!(
+                "failed to read Vespa CA cert at {}: {err}",
+                ca_cert_path.display()
+            ))
+        })?
+    };
 
     let mut builder = reqwest::Client::builder();
 
