@@ -133,29 +133,35 @@ fn load_pem_from_env_or_path(
     path_env: &str,
     default_path: Option<PathBuf>,
     label: &str,
-) -> Result<Option<String>, AppError> {
+) -> Result<(Option<String>, String), AppError> {
     if let Ok(value) = std::env::var(value_env) {
         if value.contains("-----BEGIN") {
-            return Ok(Some(value));
+            return Ok((Some(value), format!("{value_env} (inline)")));
         }
         let path = PathBuf::from(value);
-        return Ok(Some(read_pem_from_path(&path, label)?));
+        return Ok((Some(read_pem_from_path(&path, label)?), format!("{value_env} (path)")));
     }
 
     if let Ok(path) = std::env::var(path_env) {
-        return Ok(Some(read_pem_from_path(&PathBuf::from(path), label)?));
+        return Ok((
+            Some(read_pem_from_path(&PathBuf::from(path), label)?),
+            format!("{path_env} (path)"),
+        ));
     }
 
     if let Some(path) = default_path {
-        return Ok(Some(read_pem_from_path(&path, label)?));
+        return Ok((
+            Some(read_pem_from_path(&path, label)?),
+            format!("default path {}", path.display()),
+        ));
     }
 
-    Ok(None)
+    Ok((None, "missing".into()))
 }
 
 fn build_http_client() -> Result<reqwest::Client, AppError> {
     let ca_default = PathBuf::from("vespa/application/security/clients.pem");
-    let ca_cert = load_pem_from_env_or_path(
+    let (ca_cert, ca_source) = load_pem_from_env_or_path(
         "VESPA_CA_CERT",
         "VESPA_CA_CERT_PATH",
         Some(ca_default),
@@ -164,13 +170,13 @@ fn build_http_client() -> Result<reqwest::Client, AppError> {
     ?
     .ok_or_else(|| AppError::Config("missing Vespa CA cert".into()))?;
 
-    let cert = load_pem_from_env_or_path(
+    let (cert, cert_source) = load_pem_from_env_or_path(
         "VESPA_CLIENT_CERT",
         "VESPA_CLIENT_CERT_PATH",
         Some(PathBuf::from("vespa/application/security/client.pem")),
         "Vespa client cert",
     )?;
-    let key = load_pem_from_env_or_path(
+    let (key, key_source) = load_pem_from_env_or_path(
         "VESPA_CLIENT_KEY",
         "VESPA_CLIENT_KEY_PATH",
         Some(PathBuf::from("vespa/application/security/client.key")),
@@ -178,6 +184,11 @@ fn build_http_client() -> Result<reqwest::Client, AppError> {
     )?;
 
     let mut builder = reqwest::Client::builder();
+
+    info!(
+        "vespa tls sources: ca={}, cert={}, key={}",
+        ca_source, cert_source, key_source
+    );
 
     let ca_cert = normalize_pem(&ca_cert);
     let ca = reqwest::Certificate::from_pem(ca_cert.as_bytes())

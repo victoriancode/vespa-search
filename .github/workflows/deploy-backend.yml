@@ -34,4 +34,7 @@ jobs:
             --config fly.toml \
             --dockerfile Dockerfile \
             --app "${FLY_APP_NAME}" \
+            --build-arg VESPA_CLIENT_CERT="${{ secrets.VESPA_CLIENT_CERT }}" \
+            --build-arg VESPA_CLIENT_KEY="${{ secrets.VESPA_CLIENT_KEY }}" \
+            --build-arg VESPA_CA_CERT="${{ secrets.VESPA_CA_CERT }}" \
             --remote-only
