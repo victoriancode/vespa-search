@@ -9,7 +9,7 @@ primary_region = 'iad'
 [build]
 
 [env]
-  VESPA_CLUSTER = 'kavia-chris.vespacodesearch.withchris-kavia'
+  VESPA_CLUSTER = 'codesearch'
 
 [http_service]
   internal_port = 3001
