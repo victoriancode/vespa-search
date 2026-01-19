@@ -121,9 +121,21 @@ fn normalize_pem(value: &str) -> String {
 fn build_http_client() -> Result<reqwest::Client, AppError> {
     let cert = std::env::var("VESPA_CLIENT_CERT").ok();
     let key = std::env::var("VESPA_CLIENT_KEY").ok();
+    let ca_cert = std::env::var("VESPA_CA_CERT").ok();
+
+    let mut builder = reqwest::Client::builder();
+
+    if let Some(ca_cert) = ca_cert {
+        let ca_cert = normalize_pem(&ca_cert);
+        let ca = reqwest::Certificate::from_pem(ca_cert.as_bytes())
+            .map_err(|err| AppError::Config(format!("invalid Vespa CA cert: {err}")))?;
+        builder = builder.add_root_certificate(ca);
+    }
 
     match (cert, key) {
-        (None, None) => Ok(reqwest::Client::new()),
+        (None, None) => builder
+            .build()
+            .map_err(|err| AppError::Config(format!("failed to build HTTP client: {err}"))),
         (Some(cert), Some(key)) => {
             let cert = normalize_pem(&cert);
             let key = normalize_pem(&key);
@@ -133,7 +145,7 @@ fn build_http_client() -> Result<reqwest::Client, AppError> {
             identity_pem.extend_from_slice(key.as_bytes());
             let identity = reqwest::Identity::from_pem(&identity_pem)
                 .map_err(|err| AppError::Config(format!("invalid Vespa client cert/key: {err}")))?;
-            reqwest::Client::builder()
+            builder
                 .identity(identity)
                 .build()
                 .map_err(|err| AppError::Config(format!("failed to build HTTP client: {err}")))
