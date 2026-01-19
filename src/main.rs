@@ -662,21 +662,26 @@ async fn feed_repo_to_vespa(
         });
 
         let doc_id = format!("{}-{}", record.id, chunk_id);
-        let body = serde_json::json!({ "fields": fields });
-        let body_bytes = serde_json::to_vec(&body)?;
+        let vespa_doc_id = format!(
+            "id:{}:{}::{}",
+            state.vespa_namespace, state.vespa_document_type, doc_id
+        );
+        let body = serde_json::json!({ "put": vespa_doc_id, "fields": fields });
+        let body_text = serde_json::to_string(&body)?;
         let response = state
             .http_client
-            .put(vespa_document_url(state, &doc_id))
-            .header(reqwest::header::CONTENT_TYPE, "application/json")
-            .body(body_bytes.clone())
+            .post(vespa_document_feed_url(state))
+            .header(reqwest::header::CONTENT_TYPE, "application/json; charset=utf-8")
+            .header(reqwest::header::ACCEPT, "application/json")
+            .body(body_text.clone())
             .send()
             .await?;
 
         if !response.status().is_success() {
             let status = response.status();
             let body = response.text().await.unwrap_or_default();
-            let preview_len = body_bytes.len().min(1024);
-            let preview = String::from_utf8_lossy(&body_bytes[..preview_len]);
+            let preview_len = body_text.len().min(1024);
+            let preview = &body_text[..preview_len];
             let response_preview: String = body.chars().take(1024).collect();
             error!(
                 "vespa feed rejected (status {}), request preview: {}, response: {}",
@@ -794,14 +799,8 @@ fn should_skip_dir(name: &str) -> bool {
     )
 }
 
-fn vespa_document_url(state: &AppState, doc_id: &str) -> String {
-    format!(
-        "{}/document/v1/{}/{}/docid/{}",
-        state.vespa_endpoint.trim_end_matches('/'),
-        state.vespa_namespace,
-        state.vespa_document_type,
-        urlencoding::encode(doc_id)
-    )
+fn vespa_document_feed_url(state: &AppState) -> String {
+    format!("{}/document/v1/", state.vespa_endpoint.trim_end_matches('/'))
 }
 
 fn vespa_search_url(state: &AppState) -> String {
