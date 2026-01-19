@@ -161,6 +161,7 @@ fn build_http_client() -> Result<reqwest::Client, AppError> {
         Some(ca_default),
         "Vespa CA cert",
     )
+    ?
     .ok_or_else(|| AppError::Config("missing Vespa CA cert".into()))?;
 
     let cert = load_pem_from_env_or_path(
