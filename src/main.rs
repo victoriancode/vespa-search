@@ -108,6 +108,7 @@ impl IntoResponse for AppError {
             AppError::Config(_) | AppError::Io(_) | AppError::Serde(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
             }
+            AppError::VespaRequest(_) | AppError::VespaRejected(_) => StatusCode::BAD_GATEWAY,
         };
         let body = Json(serde_json::json!({"error": self.to_string()}));
         (status, body).into_response()
@@ -121,16 +122,22 @@ fn normalize_pem(value: &str) -> String {
 fn build_http_client() -> Result<reqwest::Client, AppError> {
     let cert = std::env::var("VESPA_CLIENT_CERT").ok();
     let key = std::env::var("VESPA_CLIENT_KEY").ok();
-    let ca_cert = std::env::var("VESPA_CA_CERT").ok();
+    let ca_cert_path = std::env::var("VESPA_CA_CERT_PATH")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from("vespa/application/security/clients.pem"));
+    let ca_cert = std::fs::read_to_string(&ca_cert_path).map_err(|err| {
+        AppError::Config(format!(
+            "failed to read Vespa CA cert at {}: {err}",
+            ca_cert_path.display()
+        ))
+    })?;
 
     let mut builder = reqwest::Client::builder();
 
-    if let Some(ca_cert) = ca_cert {
-        let ca_cert = normalize_pem(&ca_cert);
-        let ca = reqwest::Certificate::from_pem(ca_cert.as_bytes())
-            .map_err(|err| AppError::Config(format!("invalid Vespa CA cert: {err}")))?;
-        builder = builder.add_root_certificate(ca);
-    }
+    let ca_cert = normalize_pem(&ca_cert);
+    let ca = reqwest::Certificate::from_pem(ca_cert.as_bytes())
+        .map_err(|err| AppError::Config(format!("invalid Vespa CA cert: {err}")))?;
+    builder = builder.add_root_certificate(ca);
 
     match (cert, key) {
         (None, None) => builder
