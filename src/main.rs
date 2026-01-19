@@ -1,19 +1,28 @@
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    response::IntoResponse,
+    response::{sse::Event, sse::KeepAlive, sse::Sse, IntoResponse},
     routing::{get, post},
     Json, Router,
 };
 use chrono::Utc;
+use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
+    convert::Infallible,
     path::{Path as StdPath, PathBuf},
     sync::Arc,
+    time::Duration,
 };
 use thiserror::Error;
-use tokio::{fs, io::AsyncWriteExt, process::Command, sync::RwLock};
+use tokio::{
+    fs,
+    io::AsyncWriteExt,
+    process::Command,
+    sync::{broadcast, RwLock},
+};
+use tokio_stream::wrappers::BroadcastStream;
 use tower_http::cors::{Any, CorsLayer};
 use tracing::{error, info, warn};
 use uuid::Uuid;
@@ -44,6 +53,14 @@ struct RepoResponse {
 struct StatusResponse {
     status: String,
     message: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct IngestEvent {
+    repo_id: String,
+    status: String,
+    message: Option<String>,
+    timestamp: i64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -108,6 +125,7 @@ struct AppState {
     registry_path: PathBuf,
     repos_path: PathBuf,
     registry: Arc<RwLock<Vec<RepoRecord>>>,
+    status_tx: broadcast::Sender<IngestEvent>,
     vespa_endpoint: String,
     vespa_document_endpoint: String,
     vespa_cluster: String,
@@ -282,11 +300,13 @@ async fn main() -> Result<(), AppError> {
     fs::create_dir_all(&repos_path).await?;
 
     let registry = load_registry(&registry_path).await.unwrap_or_default();
+    let (status_tx, _status_rx) = broadcast::channel(200);
 
     let state = AppState {
         registry_path,
         repos_path,
         registry: Arc::new(RwLock::new(registry)),
+        status_tx,
         vespa_endpoint,
         vespa_document_endpoint,
         vespa_cluster,
@@ -299,6 +319,7 @@ async fn main() -> Result<(), AppError> {
         .route("/repos", post(create_repo).get(list_repos))
         .route("/repos/:id/index", post(index_repo))
         .route("/repos/:id/status", get(repo_status))
+        .route("/repos/:id/events", get(repo_events))
         .route("/repos/:id/wiki", get(repo_wiki))
         .route("/search", post(search))
         .with_state(state)
@@ -372,17 +393,33 @@ async fn index_repo(
     let repo_path = state.repos_path.join(&record.owner).join(&record.name);
     let vv_path = repo_path.join("vv");
 
-    write_status(&vv_path, "in_progress", Some("Ingestion queued".into())).await?;
+    write_status(
+        &state,
+        &vv_path,
+        &record.id,
+        "in_progress",
+        Some("Ingestion queued".into()),
+    )
+    .await?;
     let state_clone = state.clone();
     let record_clone = record.clone();
     let repo_path_clone = repo_path.clone();
     let vv_path_clone = vv_path.clone();
     tokio::spawn(async move {
+        let state_for_ingest = state_clone.clone();
+        let vv_path_for_ingest = vv_path_clone.clone();
         if let Err(err) =
-            ingest_repo(state_clone, record_clone, repo_path_clone, vv_path_clone).await
+            ingest_repo(state_for_ingest, record_clone, repo_path_clone, vv_path_for_ingest).await
         {
             error!("ingestion failed for repo {}: {}", record.id, err);
-            let _ = write_status(&vv_path, "error", Some(err.to_string())).await;
+            let _ = write_status(
+                &state_clone,
+                &vv_path_clone,
+                &record.id,
+                "error",
+                Some(err.to_string()),
+            )
+            .await;
         }
     });
 
@@ -410,6 +447,32 @@ async fn repo_status(
         .join(&record.name)
         .join("vv");
     read_status(&vv_path).await
+}
+
+async fn repo_events(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Sse<impl futures_util::Stream<Item = Result<Event, Infallible>>> {
+    let repo_id = id.clone();
+    let stream = BroadcastStream::new(state.status_tx.subscribe()).filter_map(move |result| {
+        let repo_id = repo_id.clone();
+        async move {
+            match result {
+                Ok(event) if event.repo_id == repo_id => {
+                    let payload = serde_json::to_string(&event).unwrap_or_else(|_| "{}".into());
+                    Some(Ok(Event::default().event("status").data(payload)))
+                }
+                Ok(_) => None,
+                Err(_) => None,
+            }
+        }
+    });
+
+    Sse::new(stream).keep_alive(
+        KeepAlive::new()
+            .interval(Duration::from_secs(15))
+            .text("keep-alive"),
+    )
 }
 
 async fn repo_wiki(
@@ -525,20 +588,28 @@ async fn save_registry(path: &StdPath, registry: &[RepoRecord]) -> Result<(), Ap
 }
 
 async fn write_status(
+    state: &AppState,
     vv_path: &StdPath,
+    repo_id: &str,
     status: &str,
     message: Option<String>,
 ) -> Result<(), AppError> {
     fs::create_dir_all(vv_path).await?;
     let payload = StatusResponse {
         status: status.into(),
-        message,
+        message: message.clone(),
     };
     fs::write(
         vv_path.join("status.json"),
         serde_json::to_vec_pretty(&payload)?,
     )
     .await?;
+    let _ = state.status_tx.send(IngestEvent {
+        repo_id: repo_id.to_string(),
+        status: status.to_string(),
+        message,
+        timestamp: Utc::now().timestamp_millis(),
+    });
     Ok(())
 }
 
@@ -561,7 +632,14 @@ async fn ingest_repo(
     repo_path: PathBuf,
     vv_path: PathBuf,
 ) -> Result<(), AppError> {
-    write_status(&vv_path, "in_progress", Some("Cloning repository".into())).await?;
+    write_status(
+        &state,
+        &vv_path,
+        &record.id,
+        "in_progress",
+        Some("Cloning repository".into()),
+    )
+    .await?;
 
     if repo_path.exists() && !repo_path.join(".git").exists() {
         if is_dir_empty(&repo_path).await? {
@@ -579,7 +657,9 @@ async fn ingest_repo(
 
         if repo_path.exists() {
             write_status(
+                &state,
                 &vv_path,
+                &record.id,
                 "error",
                 Some("Repo path exists but is not a git repository".into()),
             )
@@ -602,7 +682,14 @@ async fn ingest_repo(
             .map_err(AppError::Io)?;
 
         if !status.success() {
-            write_status(&vv_path, "error", Some("Git clone failed".into())).await?;
+            write_status(
+                &state,
+                &vv_path,
+                &record.id,
+                "error",
+                Some("Git clone failed".into()),
+            )
+            .await?;
             return Err(AppError::Io(std::io::Error::new(
                 std::io::ErrorKind::Other,
                 "git clone failed",
@@ -634,7 +721,9 @@ async fn ingest_repo(
     fs::write(vv_path.join("wiki/index.md"), wiki_content).await?;
 
     write_status(
+        &state,
         &vv_path,
+        &record.id,
         "indexing",
         Some("Feeding documents to Vespa".into()),
     )
@@ -644,7 +733,14 @@ async fn ingest_repo(
         "vespa feed completed for repo {} ({} documents)",
         record.id, indexed
     );
-    write_status(&vv_path, "complete", Some("Ingestion complete".into())).await?;
+    write_status(
+        &state,
+        &vv_path,
+        &record.id,
+        "complete",
+        Some("Ingestion complete".into()),
+    )
+    .await?;
 
     Ok(())
 }
@@ -904,12 +1000,15 @@ fn escape_yql_string(value: &str) -> String {
 fn build_snippet(content: &str) -> String {
     const MAX_CHARS: usize = 400;
     let trimmed = content.trim();
-    if trimmed.len() <= MAX_CHARS {
-        return trimmed.to_string();
+    let mut chars = trimmed.chars();
+    let snippet: String = chars.by_ref().take(MAX_CHARS).collect();
+    if chars.next().is_some() {
+        let mut limited = snippet;
+        limited.push_str("...");
+        limited
+    } else {
+        snippet
     }
-    let mut snippet = trimmed[..MAX_CHARS].to_string();
-    snippet.push_str("...");
-    snippet
 }
 
 fn guess_language(path: &StdPath) -> String {
