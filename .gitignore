@@ -4,3 +4,13 @@
 /backend/data/registry.json
 /repos
 .DS_Store
+vespa/application/security/*.key
+vespa/application/security/*.csr
+vespa/application/security/*.srl
+vespa/application/security/*.pem
+!vespa/application/security/ca.pem
+!vespa/application/security/clients.pem
+vespa/application/security/client.pem
+/client.key
+/client.pem
+/ca.key

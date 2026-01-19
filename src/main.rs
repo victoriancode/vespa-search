@@ -119,22 +119,71 @@ fn normalize_pem(value: &str) -> String {
     value.replace("\\n", "\n")
 }
 
+fn read_pem_from_path(path: &PathBuf, label: &str) -> Result<String, AppError> {
+    std::fs::read_to_string(path).map_err(|err| {
+        AppError::Config(format!(
+            "failed to read {label} at {}: {err}",
+            path.display()
+        ))
+    })
+}
+
+fn load_pem_from_env_or_path(
+    value_env: &str,
+    path_env: &str,
+    default_path: Option<PathBuf>,
+    label: &str,
+) -> Result<Option<String>, AppError> {
+    if let Ok(value) = std::env::var(value_env) {
+        if value.contains("-----BEGIN") {
+            return Ok(Some(value));
+        }
+        let path = PathBuf::from(value);
+        return Ok(Some(read_pem_from_path(&path, label)?));
+    }
+
+    if let Ok(path) = std::env::var(path_env) {
+        return Ok(Some(read_pem_from_path(&PathBuf::from(path), label)?));
+    }
+
+    if let Some(path) = default_path {
+        return Ok(Some(read_pem_from_path(&path, label)?));
+    }
+
+    Ok(None)
+}
+
 fn build_http_client() -> Result<reqwest::Client, AppError> {
-    let cert = std::env::var("VESPA_CLIENT_CERT").ok();
-    let key = std::env::var("VESPA_CLIENT_KEY").ok();
-    let ca_cert = if let Ok(ca_cert) = std::env::var("VESPA_CA_CERT") {
-        ca_cert
-    } else {
-        let ca_cert_path = std::env::var("VESPA_CA_CERT_PATH")
-            .map(PathBuf::from)
-            .unwrap_or_else(|_| PathBuf::from("vespa/application/security/clients.pem"));
-        std::fs::read_to_string(&ca_cert_path).map_err(|err| {
-            AppError::Config(format!(
-                "failed to read Vespa CA cert at {}: {err}",
-                ca_cert_path.display()
-            ))
-        })?
-    };
+    let ca_default = PathBuf::from("vespa/application/security/ca.pem");
+    let ca_fallback = PathBuf::from("vespa/application/security/clients.pem");
+    let ca_cert = load_pem_from_env_or_path(
+        "VESPA_CA_CERT",
+        "VESPA_CA_CERT_PATH",
+        Some(ca_default.clone()),
+        "Vespa CA cert",
+    )
+    .or_else(|_| {
+        load_pem_from_env_or_path(
+            "VESPA_CA_CERT",
+            "VESPA_CA_CERT_PATH",
+            Some(ca_fallback),
+            "Vespa CA cert",
+        )
+    })?
+    .ok_or_else(|| AppError::Config("missing Vespa CA cert".into()))?;
+
+    let cert = load_pem_from_env_or_path(
+        "VESPA_CLIENT_CERT",
+        "VESPA_CLIENT_CERT_PATH",
+        None,
+        "Vespa client cert",
+    )?;
+    let key = load_pem_from_env_or_path(
+        "VESPA_CLIENT_KEY",
+        "VESPA_CLIENT_KEY_PATH",
+        None,
+        "Vespa client key",
+    )?;
 
     let mut builder = reqwest::Client::builder();
 
