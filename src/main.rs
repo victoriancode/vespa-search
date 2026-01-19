@@ -200,7 +200,7 @@ fn build_embedding_provider() -> Option<EmbeddingProvider> {
         .unwrap_or_else(|_| "sentence-transformers/all-mpnet-base-v2".into());
     let base_url = std::env::var("HUGGINGFACE_ENDPOINT")
         .or_else(|_| std::env::var("HF_ENDPOINT"))
-        .unwrap_or_else(|_| "https://api-inference.huggingface.co".into());
+        .unwrap_or_else(|_| "https://router.huggingface.co".into());
     Some(EmbeddingProvider {
         base_url,
         model,
