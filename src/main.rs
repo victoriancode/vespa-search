@@ -467,9 +467,82 @@ async fn repo_wiki(
     Ok(Json(WikiResponse { content }))
 }
 
-async fn search(Json(payload): Json<SearchRequest>) -> Result<Json<SearchResponse>, AppError> {
-    let _ = payload;
-    Ok(Json(SearchResponse { results: vec![] }))
+async fn search(
+    State(state): State<AppState>,
+    Json(payload): Json<SearchRequest>,
+) -> Result<Json<SearchResponse>, AppError> {
+    let query = payload.query.trim();
+    if query.is_empty() {
+        return Ok(Json(SearchResponse { results: vec![] }));
+    }
+
+    let where_clause = build_search_where(payload.repo_filter.as_deref());
+    let yql = format!(
+        "select repo_id, file_path, line_start, line_end, content from sources * where {};",
+        where_clause
+    );
+
+    let response = state
+        .http_client
+        .post(vespa_search_url(&state))
+        .json(&serde_json::json!({
+            "yql": yql,
+            "query": query,
+            "hits": 10,
+        }))
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let body = response.text().await.unwrap_or_default();
+        return Err(AppError::VespaRejected(body));
+    }
+
+    let body: serde_json::Value = response.json().await?;
+    let mut results = Vec::new();
+    if let Some(children) = body.pointer("/root/children").and_then(|v| v.as_array()) {
+        for child in children {
+            let fields = match child.get("fields") {
+                Some(fields) => fields,
+                None => continue,
+            };
+            let repo_id = fields
+                .get("repo_id")
+                .and_then(|value| value.as_str())
+                .unwrap_or_default()
+                .to_string();
+            let file_path = fields
+                .get("file_path")
+                .and_then(|value| value.as_str())
+                .unwrap_or_default()
+                .to_string();
+            let line_start = fields
+                .get("line_start")
+                .and_then(|value| value.as_i64())
+                .unwrap_or(1)
+                .max(1) as usize;
+            let line_end = fields
+                .get("line_end")
+                .and_then(|value| value.as_i64())
+                .unwrap_or(line_start as i64)
+                .max(1) as usize;
+            let content = fields
+                .get("content")
+                .and_then(|value| value.as_str())
+                .unwrap_or("");
+            let snippet = build_snippet(content);
+
+            results.push(SearchResult {
+                repo_id,
+                file_path,
+                line_start,
+                line_end,
+                snippet,
+            });
+        }
+    }
+
+    Ok(Json(SearchResponse { results }))
 }
 
 async fn load_registry(path: &StdPath) -> Result<Vec<RepoRecord>, AppError> {
@@ -589,15 +662,25 @@ async fn feed_repo_to_vespa(
         });
 
         let doc_id = format!("{}-{}", record.id, chunk_id);
+        let body = serde_json::json!({ "fields": fields });
+        let body_bytes = serde_json::to_vec(&body)?;
         let response = state
             .http_client
             .put(vespa_document_url(state, &doc_id))
-            .json(&serde_json::json!({ "fields": fields }))
+            .header(reqwest::header::CONTENT_TYPE, "application/json")
+            .body(body_bytes.clone())
             .send()
             .await?;
 
         if !response.status().is_success() {
             let body = response.text().await.unwrap_or_default();
+            let preview_len = body_bytes.len().min(1024);
+            let preview = String::from_utf8_lossy(&body_bytes[..preview_len]);
+            error!(
+                "vespa feed rejected (status {}), request preview: {}",
+                response.status(),
+                preview
+            );
             return Err(AppError::VespaRejected(body));
         }
 
@@ -713,17 +796,53 @@ fn should_skip_dir(name: &str) -> bool {
 fn vespa_document_url(state: &AppState, doc_id: &str) -> String {
     format!(
         "{}/document/v1/{}/{}/docid/{}",
-        state.vespa_endpoint,
+        state.vespa_endpoint.trim_end_matches('/'),
         state.vespa_namespace,
         state.vespa_document_type,
         urlencoding::encode(doc_id)
     )
 }
 
+fn vespa_search_url(state: &AppState) -> String {
+    format!("{}/search/", state.vespa_endpoint.trim_end_matches('/'))
+}
+
 fn sha256_hex(data: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(data);
     hex::encode(hasher.finalize())
+}
+
+fn build_search_where(repo_filter: Option<&str>) -> String {
+    let mut clause = "userQuery()".to_string();
+    if let Some(repo_id) = repo_filter.and_then(|value| {
+        let trimmed = value.trim();
+        if trimmed.is_empty() {
+            None
+        } else {
+            Some(trimmed)
+        }
+    }) {
+        clause.push_str(" and repo_id = \"");
+        clause.push_str(&escape_yql_string(repo_id));
+        clause.push('"');
+    }
+    clause
+}
+
+fn escape_yql_string(value: &str) -> String {
+    value.replace('\\', "\\\\").replace('\"', "\\\"")
+}
+
+fn build_snippet(content: &str) -> String {
+    const MAX_CHARS: usize = 400;
+    let trimmed = content.trim();
+    if trimmed.len() <= MAX_CHARS {
+        return trimmed.to_string();
+    }
+    let mut snippet = trimmed[..MAX_CHARS].to_string();
+    snippet.push_str("...");
+    snippet
 }
 
 fn guess_language(path: &StdPath) -> String {
