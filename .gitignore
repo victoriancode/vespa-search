@@ -3,6 +3,7 @@
 /backend/target
 /backend/data/registry.json
 /repos
+/target
 .DS_Store
 /*.key
 /*.csr
