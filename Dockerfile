@@ -14,7 +14,6 @@ ARG VESPA_CA_CERT
 RUN apt-get update && apt-get install -y ca-certificates libssl3 && rm -rf /var/lib/apt/lists/*
 RUN mkdir -p /data
 RUN mkdir -p /app/vespa/application/security
-COPY vespa/application/security/clients.pem /app/vespa/application/security/clients.pem
 RUN if [ -n "$VESPA_CLIENT_CERT" ]; then echo "$VESPA_CLIENT_CERT" > /app/vespa/application/security/client.pem; fi
 RUN if [ -n "$VESPA_CLIENT_KEY" ]; then echo "$VESPA_CLIENT_KEY" > /app/vespa/application/security/client.key; fi
 RUN if [ -n "$VESPA_CA_CERT" ]; then echo "$VESPA_CA_CERT" > /app/vespa/application/security/clients.pem; fi
