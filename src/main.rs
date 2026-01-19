@@ -677,9 +677,10 @@ async fn feed_repo_to_vespa(
             let body = response.text().await.unwrap_or_default();
             let preview_len = body_bytes.len().min(1024);
             let preview = String::from_utf8_lossy(&body_bytes[..preview_len]);
+            let response_preview: String = body.chars().take(1024).collect();
             error!(
-                "vespa feed rejected (status {}), request preview: {}",
-                status, preview
+                "vespa feed rejected (status {}), request preview: {}, response: {}",
+                status, preview, response_preview
             );
             return Err(AppError::VespaRejected(body));
         }
