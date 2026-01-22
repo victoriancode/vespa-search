@@ -10,6 +10,7 @@ use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
+    collections::HashMap,
     convert::Infallible,
     path::{Path as StdPath, PathBuf},
     sync::Arc,
@@ -32,6 +33,20 @@ const EMBEDDING_DIM: usize = 768;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct RepoRecord {
     id: String,
+    repo_url: String,
+    owner: String,
+    name: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct GitHubRepo {
+    name: String,
+    default_branch: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct GitHubRepoState {
+    repo_id: String,
     repo_url: String,
     owner: String,
     name: String,
@@ -327,6 +342,10 @@ async fn main() -> Result<(), AppError> {
         http_client: build_http_client()?,
     };
 
+    if let Err(err) = sync_registry_from_github(&state).await {
+        warn!("failed to bootstrap registry from GitHub: {err}");
+    }
+
     let app = Router::new()
         .route("/repos", post(create_repo).get(list_repos))
         .route("/repos/:id/index", post(index_repo))
@@ -393,14 +412,7 @@ async fn index_repo(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<Json<StatusResponse>, AppError> {
-    let record = {
-        let registry = state.registry.read().await;
-        registry
-            .iter()
-            .find(|repo| repo.id == id)
-            .cloned()
-            .ok_or(AppError::RepoNotFound)?
-    };
+    let record = find_repo_by_id(&state, &id).await?;
 
     let repo_path = state.repos_path.join(&record.owner).join(&record.name);
     let vv_path = repo_path.join("vv");
@@ -445,14 +457,7 @@ async fn repo_status(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<Json<StatusResponse>, AppError> {
-    let record = {
-        let registry = state.registry.read().await;
-        registry
-            .iter()
-            .find(|repo| repo.id == id)
-            .cloned()
-            .ok_or(AppError::RepoNotFound)?
-    };
+    let record = find_repo_by_id(&state, &id).await?;
     let vv_path = state
         .repos_path
         .join(&record.owner)
@@ -491,14 +496,7 @@ async fn repo_wiki(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<Json<WikiResponse>, AppError> {
-    let record = {
-        let registry = state.registry.read().await;
-        registry
-            .iter()
-            .find(|repo| repo.id == id)
-            .cloned()
-            .ok_or(AppError::RepoNotFound)?
-    };
+    let record = find_repo_by_id(&state, &id).await?;
     let wiki_path = state
         .repos_path
         .join(&record.owner)
@@ -610,6 +608,168 @@ async fn save_registry(path: &StdPath, registry: &[RepoRecord]) -> Result<(), Ap
     let contents = serde_json::to_vec_pretty(registry)?;
     fs::write(path, contents).await?;
     Ok(())
+}
+
+async fn list_github_org_repos(state: &AppState, org: &str) -> Result<Vec<GitHubRepo>, AppError> {
+    let mut page = 1usize;
+    let mut repos = Vec::new();
+
+    loop {
+        let url = format!("https://api.github.com/orgs/{org}/repos?per_page=100&page={page}");
+        let mut request = state
+            .http_client
+            .get(&url)
+            .header("Accept", "application/vnd.github+json")
+            .header("User-Agent", "vespa-code-search");
+        if let Some(token) = state.github_token.as_deref() {
+            request = request.header("Authorization", format!("token {token}"));
+        }
+        let response = request.send().await?;
+        if !response.status().is_success() {
+            let status = response.status();
+            let body = response.text().await.unwrap_or_default();
+            return Err(AppError::GitHub(format!(
+                "failed to list GitHub repos for {org}: {status} {body}"
+            )));
+        }
+
+        let page_repos: Vec<GitHubRepo> = response.json().await?;
+        let page_count = page_repos.len();
+        repos.extend(page_repos);
+        if page_count < 100 {
+            break;
+        }
+        page += 1;
+    }
+
+    Ok(repos)
+}
+
+async fn fetch_github_repo_state(
+    state: &AppState,
+    org: &str,
+    repo: &GitHubRepo,
+) -> Result<Option<RepoRecord>, AppError> {
+    let branch = if repo.default_branch.is_empty() {
+        "main"
+    } else {
+        repo.default_branch.as_str()
+    };
+    let url = format!(
+        "https://raw.githubusercontent.com/{org}/{}/{}/.vv/state.json",
+        repo.name, branch
+    );
+    let mut request = state
+        .http_client
+        .get(&url)
+        .header("User-Agent", "vespa-code-search");
+    if let Some(token) = state.github_token.as_deref() {
+        request = request.header("Authorization", format!("token {token}"));
+    }
+    let response = request.send().await?;
+    if response.status() == StatusCode::NOT_FOUND {
+        return Ok(None);
+    }
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        return Err(AppError::GitHub(format!(
+            "failed to fetch .vv state from {url}: {status} {body}"
+        )));
+    }
+
+    let payload = match response.json::<GitHubRepoState>().await {
+        Ok(payload) => payload,
+        Err(err) => {
+            warn!("failed to parse .vv state from {url}: {err}");
+            return Ok(None);
+        }
+    };
+    if payload.repo_id.is_empty() {
+        return Ok(None);
+    }
+
+    Ok(Some(RepoRecord {
+        id: payload.repo_id,
+        repo_url: payload.repo_url,
+        owner: payload.owner,
+        name: payload.name,
+    }))
+}
+
+async fn sync_registry_from_github(state: &AppState) -> Result<usize, AppError> {
+    let org = match state.github_org.as_deref() {
+        Some(org) => org,
+        None => return Ok(0),
+    };
+
+    let repos = list_github_org_repos(state, org).await?;
+    let mut records = Vec::new();
+    for repo in repos {
+        if !repo.name.ends_with("-vv-search") {
+            continue;
+        }
+        match fetch_github_repo_state(state, org, &repo).await {
+            Ok(Some(record)) => records.push(record),
+            Ok(None) => {}
+            Err(err) => warn!("failed to read vv state for {}: {}", repo.name, err),
+        }
+    }
+
+    if records.is_empty() {
+        return Ok(0);
+    }
+
+    let mut registry = state.registry.write().await;
+    let mut index = HashMap::new();
+    for (idx, record) in registry.iter().enumerate() {
+        index.insert(record.id.clone(), idx);
+    }
+
+    let mut changes = 0usize;
+    for record in records {
+        if let Some(&idx) = index.get(&record.id) {
+            let existing = &mut registry[idx];
+            if existing.repo_url != record.repo_url
+                || existing.owner != record.owner
+                || existing.name != record.name
+            {
+                *existing = record;
+                changes += 1;
+            }
+        } else {
+            index.insert(record.id.clone(), registry.len());
+            registry.push(record);
+            changes += 1;
+        }
+    }
+
+    if changes > 0 {
+        save_registry(&state.registry_path, &registry).await?;
+    }
+
+    Ok(changes)
+}
+
+async fn find_repo_by_id(state: &AppState, id: &str) -> Result<RepoRecord, AppError> {
+    {
+        let registry = state.registry.read().await;
+        if let Some(record) = registry.iter().find(|repo| repo.id == id) {
+            return Ok(record.clone());
+        }
+    }
+
+    if state.github_org.is_some() {
+        if let Err(err) = sync_registry_from_github(state).await {
+            warn!("failed to refresh registry from GitHub: {err}");
+        }
+        let registry = state.registry.read().await;
+        if let Some(record) = registry.iter().find(|repo| repo.id == id) {
+            return Ok(record.clone());
+        }
+    }
+
+    Err(AppError::RepoNotFound)
 }
 
 async fn write_status(
@@ -961,9 +1121,13 @@ async fn feed_repo_to_vespa(
             continue;
         }
 
-        let content = String::from_utf8_lossy(&content_bytes).to_string();
+        let content_lossy = String::from_utf8_lossy(&content_bytes);
+        let content = sanitize_vespa_content(&content_lossy);
+        if content.trim().is_empty() {
+            continue;
+        }
         let line_end = content.lines().count().max(1) as i32;
-        let content_sha = sha256_hex(&content_bytes);
+        let content_sha = sha256_hex(content.as_bytes());
         let chunk_id = sha256_hex(format!("{}:{}", record.id, file_path.display()).as_bytes());
         let chunk_hash = sha256_hex(content.as_bytes());
         let language = guess_language(&file_path);
@@ -1167,6 +1331,16 @@ fn sha256_hex(data: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(data);
     hex::encode(hasher.finalize())
+}
+
+fn sanitize_vespa_content(input: &str) -> String {
+    input
+        .chars()
+        .filter(|ch| match ch {
+            '\n' | '\r' | '\t' => true,
+            _ => !ch.is_control(),
+        })
+        .collect()
 }
 
 #[derive(Debug, Clone, Copy)]
