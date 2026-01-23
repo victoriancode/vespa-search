@@ -1987,7 +1987,7 @@ fn parse_hf_summary(value: serde_json::Value) -> Result<String, AppError> {
 }
 
 async fn fetch_hf_summary(state: &AppState, text: &str) -> Result<String, AppError> {
-    fetch_hf_summary_with_params(state, text, 220, 80)
+    fetch_hf_summary_with_params(state, text, 220, 80).await
 }
 
 async fn fetch_hf_summary_with_params(
@@ -2127,7 +2127,7 @@ fn build_search_yql(_repo_filter: Option<&str>, mode: SearchMode) -> String {
         clauses.push("userInput(@query)".to_string());
     }
 
-    let mut clause = if clauses.len() == 1 {
+    let clause = if clauses.len() == 1 {
         clauses[0].clone()
     } else {
         format!("({})", clauses.join(" or "))
