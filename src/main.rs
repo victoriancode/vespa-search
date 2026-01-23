@@ -37,6 +37,8 @@ const HF_DEFAULT_BASE_URL: &str = "https://router.huggingface.co/hf-inference/mo
 const HF_DEFAULT_MAX_RETRIES: usize = 3;
 const HF_DEFAULT_BACKOFF_MS: u64 = 500;
 const HF_DEFAULT_BACKOFF_MAX_MS: u64 = 8000;
+const HF_DEFAULT_SUMMARY_MODEL: &str = "facebook/bart-large-cnn";
+const HF_DEFAULT_SUMMARY_MAX_CHARS: usize = 12000;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct RepoRecord {
@@ -109,9 +111,32 @@ struct SearchResponse {
     results: Vec<SearchResult>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct SummaryEntry {
+    version: u32,
+    created_at: i64,
+    summary: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+struct SummaryStore {
+    entries: Vec<SummaryEntry>,
+}
+
+impl SummaryStore {
+    fn latest(&self) -> Option<&SummaryEntry> {
+        self.entries.last()
+    }
+
+    fn next_version(&self) -> u32 {
+        self.entries.last().map(|entry| entry.version + 1).unwrap_or(1)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 struct WikiResponse {
-    content: String,
+    summary: String,
+    history: Vec<SummaryEntry>,
 }
 
 #[derive(Debug, Serialize)]
@@ -161,6 +186,8 @@ struct AppState {
     huggingface_max_retries: usize,
     huggingface_backoff_ms: u64,
     huggingface_backoff_max_ms: u64,
+    huggingface_summary_model: String,
+    huggingface_summary_max_chars: usize,
     vespa_endpoint: String,
     vespa_document_endpoint: String,
     vespa_cluster: String,
@@ -371,6 +398,12 @@ async fn main() -> Result<(), AppError> {
         .ok()
         .and_then(|value| value.parse::<u64>().ok())
         .unwrap_or(HF_DEFAULT_BACKOFF_MAX_MS);
+    let huggingface_summary_model =
+        std::env::var("HUGGINGFACE_SUMMARY_MODEL").unwrap_or_else(|_| HF_DEFAULT_SUMMARY_MODEL.into());
+    let huggingface_summary_max_chars = std::env::var("HUGGINGFACE_SUMMARY_MAX_CHARS")
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok())
+        .unwrap_or(HF_DEFAULT_SUMMARY_MAX_CHARS);
 
     fs::create_dir_all(registry_path.parent().unwrap()).await?;
     fs::create_dir_all(&repos_path).await?;
@@ -392,6 +425,8 @@ async fn main() -> Result<(), AppError> {
         huggingface_max_retries,
         huggingface_backoff_ms,
         huggingface_backoff_max_ms,
+        huggingface_summary_model,
+        huggingface_summary_max_chars,
         vespa_endpoint,
         vespa_document_endpoint,
         vespa_cluster,
@@ -411,6 +446,7 @@ async fn main() -> Result<(), AppError> {
         .route("/repos/:id/status", get(repo_status))
         .route("/repos/:id/events", get(repo_events))
         .route("/repos/:id/wiki", get(repo_wiki))
+        .route("/repos/:id/wiki/summary", post(update_repo_summary))
         .route("/search", post(search))
         .with_state(state)
         .layer(
@@ -556,16 +592,47 @@ async fn repo_wiki(
     Path(id): Path<String>,
 ) -> Result<Json<WikiResponse>, AppError> {
     let record = find_repo_by_id(&state, &id).await?;
-    let wiki_path = state
+    let vv_path = state
         .repos_path
         .join(&record.owner)
         .join(&record.name)
-        .join("vv/wiki/index.md");
+        .join("vv");
 
-    let content = fs::read_to_string(wiki_path)
+    let store = read_summary_store(&vv_path).await.unwrap_or_default();
+    if let Some(latest) = store.latest() {
+        let mut history = store.entries.clone();
+        history.reverse();
+        return Ok(Json(WikiResponse {
+            summary: latest.summary.clone(),
+            history,
+        }));
+    }
+
+    let wiki_path = vv_path.join("wiki/index.md");
+    let fallback = fs::read_to_string(wiki_path)
         .await
         .unwrap_or_else(|_| "# CodeWiki\n\nWiki content is not yet available.".to_string());
-    Ok(Json(WikiResponse { content }))
+    Ok(Json(WikiResponse {
+        summary: fallback,
+        history: Vec::new(),
+    }))
+}
+
+async fn update_repo_summary(
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Result<Json<WikiResponse>, AppError> {
+    let record = find_repo_by_id(&state, &id).await?;
+    let repo_path = state.repos_path.join(&record.owner).join(&record.name);
+    let vv_path = repo_path.join("vv");
+    let store = generate_repo_summary(&state, &record, &repo_path, &vv_path).await?;
+    let mut history = store.entries.clone();
+    history.reverse();
+    let summary = store
+        .latest()
+        .map(|entry| entry.summary.clone())
+        .unwrap_or_else(|| "Summary not available.".into());
+    Ok(Json(WikiResponse { summary, history }))
 }
 
 async fn search(
@@ -904,6 +971,24 @@ async fn read_status(vv_path: &StdPath) -> Result<Json<StatusResponse>, AppError
     Ok(Json(status))
 }
 
+async fn read_summary_store(vv_path: &StdPath) -> Result<SummaryStore, AppError> {
+    let summary_path = vv_path.join("wiki/summary.json");
+    if fs::metadata(&summary_path).await.is_err() {
+        return Ok(SummaryStore::default());
+    }
+    let data = fs::read(&summary_path).await?;
+    let store = serde_json::from_slice::<SummaryStore>(&data)?;
+    Ok(store)
+}
+
+async fn write_summary_store(vv_path: &StdPath, store: &SummaryStore) -> Result<(), AppError> {
+    let summary_path = vv_path.join("wiki/summary.json");
+    fs::create_dir_all(summary_path.parent().unwrap()).await?;
+    let data = serde_json::to_vec_pretty(store)?;
+    fs::write(summary_path, data).await?;
+    Ok(())
+}
+
 async fn run_git_command(
     cwd: Option<&StdPath>,
     args: &[&str],
@@ -1162,6 +1247,22 @@ async fn ingest_repo(
         "vespa feed completed for repo {} ({} documents)",
         record.id, indexed
     );
+
+    write_status(
+        &state,
+        &vv_path,
+        &record.id,
+        "summarizing",
+        Some("Generating repository summary".into()),
+    )
+    .await?;
+    if let Err(err) = generate_repo_summary(&state, &record, &repo_path, &vv_path).await {
+        warn!(
+            "failed to generate summary for repo {}: {}",
+            record.id, err
+        );
+    }
+
     write_status(
         &state,
         &vv_path,
@@ -1455,7 +1556,7 @@ impl SearchMode {
 }
 
 fn resolve_search_mode(value: Option<&str>) -> SearchMode {
-    let mode = value.unwrap_or("hybrid").trim().to_lowercase();
+    let mode = value.unwrap_or("bm25").trim().to_lowercase();
     match mode.as_str() {
         "semantic" => SearchMode::Semantic,
         "bm25" => SearchMode::Bm25,
@@ -1707,6 +1808,209 @@ async fn embed_content_with_cache(
         }
     }
     Ok(embedding)
+}
+
+async fn read_repo_readme(repo_path: &StdPath) -> Option<String> {
+    let candidates = [
+        "README.md",
+        "README.mdx",
+        "README.txt",
+        "README",
+        "readme.md",
+        "readme.txt",
+        "readme",
+    ];
+    for name in candidates {
+        let path = repo_path.join(name);
+        if fs::metadata(&path).await.is_ok() {
+            if let Ok(content) = fs::read_to_string(&path).await {
+                return Some(content);
+            }
+        }
+    }
+    None
+}
+
+async fn build_repo_summary_input(
+    state: &AppState,
+    record: &RepoRecord,
+    repo_path: &StdPath,
+) -> Result<String, AppError> {
+    let files = list_repo_files(repo_path).await?;
+    let mut language_counts: HashMap<String, usize> = HashMap::new();
+    let mut file_lines = Vec::new();
+    for file in &files {
+        let language = guess_language(file);
+        *language_counts.entry(language).or_insert(0) += 1;
+        if file_lines.len() < 200 {
+            file_lines.push(format!("- {}", file.to_string_lossy()));
+        }
+    }
+
+    let mut languages: Vec<(String, usize)> = language_counts.into_iter().collect();
+    languages.sort_by(|a, b| b.1.cmp(&a.1));
+    let language_summary = languages
+        .into_iter()
+        .take(8)
+        .map(|(lang, count)| format!("{lang} ({count})"))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    let mut input = String::new();
+    input.push_str(&format!("Repository: {}/{}\n", record.owner, record.name));
+    if !language_summary.is_empty() {
+        input.push_str(&format!("\nLanguages: {language_summary}\n"));
+    }
+    if !file_lines.is_empty() {
+        input.push_str("\nFile tree (first 200 files):\n");
+        input.push_str(&file_lines.join("\n"));
+        input.push('\n');
+    }
+    if let Some(readme) = read_repo_readme(repo_path).await {
+        let cleaned = sanitize_vespa_content(readme.as_str());
+        let excerpt = truncate_for_embedding(&cleaned, state.huggingface_summary_max_chars / 2);
+        input.push_str("\nREADME excerpt:\n");
+        input.push_str(excerpt.as_ref());
+        input.push('\n');
+    }
+
+    Ok(truncate_for_embedding(&input, state.huggingface_summary_max_chars).into_owned())
+}
+
+fn parse_hf_summary(value: serde_json::Value) -> Result<String, AppError> {
+    match value {
+        serde_json::Value::Array(values) => {
+            let first = values.get(0).ok_or_else(|| {
+                AppError::HuggingFace("empty summary response".into())
+            })?;
+            if let Some(summary) = first
+                .get("summary_text")
+                .and_then(|value| value.as_str())
+            {
+                return Ok(summary.to_string());
+            }
+            Err(AppError::HuggingFace(
+                "missing summary_text in response".into(),
+            ))
+        }
+        serde_json::Value::Object(map) => {
+            if let Some(error) = map.get("error").and_then(|value| value.as_str()) {
+                return Err(AppError::HuggingFace(error.to_string()));
+            }
+            if let Some(summary) = map
+                .get("summary_text")
+                .and_then(|value| value.as_str())
+            {
+                return Ok(summary.to_string());
+            }
+            Err(AppError::HuggingFace(
+                "unexpected summary response".into(),
+            ))
+        }
+        _ => Err(AppError::HuggingFace(
+            "unexpected summary response".into(),
+        )),
+    }
+}
+
+async fn fetch_hf_summary(state: &AppState, text: &str) -> Result<String, AppError> {
+    let base_url = state.huggingface_base_url.trim_end_matches('/');
+    let url = format!(
+        "{}/{}/pipeline/summarization",
+        base_url, state.huggingface_summary_model
+    );
+    let payload = serde_json::json!({
+        "inputs": text,
+        "parameters": {
+            "max_length": 220,
+            "min_length": 80,
+            "do_sample": false
+        },
+        "options": { "wait_for_model": true }
+    });
+
+    let max_retries = state.huggingface_max_retries;
+    let mut backoff = Duration::from_millis(state.huggingface_backoff_ms);
+    let backoff_max = Duration::from_millis(state.huggingface_backoff_max_ms);
+
+    for attempt in 0..=max_retries {
+        let mut request = state.hf_client.post(&url).json(&payload);
+        if let Some(token) = state.huggingface_token.as_deref() {
+            request = request.bearer_auth(token);
+        }
+
+        match request.send().await {
+            Ok(response) => {
+                if response.status().is_success() {
+                    let value: serde_json::Value = response
+                        .json()
+                        .await
+                        .map_err(|err| AppError::HuggingFace(err.to_string()))?;
+                    return parse_hf_summary(value);
+                }
+
+                let status = response.status();
+                let body = response.text().await.unwrap_or_default();
+                if attempt < max_retries && should_retry_status(status) {
+                    warn!(
+                        "huggingface summary request failed with {status}; retrying in {:?} (attempt {}/{})",
+                        backoff,
+                        attempt + 1,
+                        max_retries
+                    );
+                    tokio::time::sleep(backoff).await;
+                    backoff = (backoff * 2).min(backoff_max);
+                    continue;
+                }
+
+                return Err(AppError::HuggingFace(format!(
+                    "summary request failed: {status} {body}"
+                )));
+            }
+            Err(err) => {
+                let detail = format_reqwest_error(&err);
+                if attempt < max_retries {
+                    warn!(
+                        "huggingface summary request failed to send: {detail}; retrying in {:?} (attempt {}/{})",
+                        backoff,
+                        attempt + 1,
+                        max_retries
+                    );
+                    tokio::time::sleep(backoff).await;
+                    backoff = (backoff * 2).min(backoff_max);
+                    continue;
+                }
+
+                return Err(AppError::HuggingFace(format!(
+                    "summary request failed to send: {detail}"
+                )));
+            }
+        }
+    }
+
+    Err(AppError::HuggingFace(
+        "summary request exhausted retries".into(),
+    ))
+}
+
+async fn generate_repo_summary(
+    state: &AppState,
+    record: &RepoRecord,
+    repo_path: &StdPath,
+    vv_path: &StdPath,
+) -> Result<SummaryStore, AppError> {
+    let input = build_repo_summary_input(state, record, repo_path).await?;
+    let summary = fetch_hf_summary(state, input.as_ref()).await?;
+    let mut store = read_summary_store(vv_path).await.unwrap_or_default();
+    let entry = SummaryEntry {
+        version: store.next_version(),
+        created_at: Utc::now().timestamp_millis(),
+        summary: summary.clone(),
+    };
+    store.entries.push(entry);
+    write_summary_store(vv_path, &store).await?;
+    let _ = fs::write(vv_path.join("wiki/index.md"), summary).await;
+    Ok(store)
 }
 
 fn build_search_yql(query: &str, repo_filter: Option<&str>, mode: SearchMode) -> String {
