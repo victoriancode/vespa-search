@@ -32,6 +32,7 @@ use uuid::Uuid;
 const EMBEDDING_DIM: usize = 768;
 const HF_DEFAULT_MODEL: &str = "sentence-transformers/all-mpnet-base-v2";
 const HF_DEFAULT_MAX_CHARS: usize = 4000;
+const HF_DEFAULT_BASE_URL: &str = "https://router.huggingface.co/hf-inference/models";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct RepoRecord {
@@ -152,6 +153,7 @@ struct AppState {
     huggingface_token: Option<String>,
     huggingface_model: String,
     huggingface_max_chars: usize,
+    huggingface_base_url: String,
     vespa_endpoint: String,
     vespa_document_endpoint: String,
     vespa_cluster: String,
@@ -348,6 +350,8 @@ async fn main() -> Result<(), AppError> {
         .ok()
         .and_then(|value| value.parse::<usize>().ok())
         .unwrap_or(HF_DEFAULT_MAX_CHARS);
+    let huggingface_base_url = std::env::var("HUGGINGFACE_EMBEDDING_BASE_URL")
+        .unwrap_or_else(|_| HF_DEFAULT_BASE_URL.into());
 
     fs::create_dir_all(registry_path.parent().unwrap()).await?;
     fs::create_dir_all(&repos_path).await?;
@@ -365,6 +369,7 @@ async fn main() -> Result<(), AppError> {
         huggingface_token,
         huggingface_model,
         huggingface_max_chars,
+        huggingface_base_url,
         vespa_endpoint,
         vespa_document_endpoint,
         vespa_cluster,
@@ -1529,9 +1534,10 @@ fn parse_hf_embedding(value: serde_json::Value) -> Result<Vec<f32>, AppError> {
 }
 
 async fn fetch_hf_embedding(state: &AppState, text: &str) -> Result<Vec<f32>, AppError> {
+    let base_url = state.huggingface_base_url.trim_end_matches('/');
     let url = format!(
-        "https://api-inference.huggingface.co/pipeline/feature-extraction/{}",
-        state.huggingface_model
+        "{}/{}/pipeline/feature-extraction",
+        base_url, state.huggingface_model
     );
     let payload = serde_json::json!({
         "inputs": text,
