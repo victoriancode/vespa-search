@@ -13,6 +13,7 @@ use std::{
     borrow::Cow,
     collections::HashMap,
     convert::Infallible,
+    error::Error,
     path::{Path as StdPath, PathBuf},
     sync::Arc,
     time::Duration,
@@ -33,6 +34,9 @@ const EMBEDDING_DIM: usize = 768;
 const HF_DEFAULT_MODEL: &str = "sentence-transformers/all-mpnet-base-v2";
 const HF_DEFAULT_MAX_CHARS: usize = 4000;
 const HF_DEFAULT_BASE_URL: &str = "https://router.huggingface.co/hf-inference/models";
+const HF_DEFAULT_MAX_RETRIES: usize = 3;
+const HF_DEFAULT_BACKOFF_MS: u64 = 500;
+const HF_DEFAULT_BACKOFF_MAX_MS: u64 = 8000;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct RepoRecord {
@@ -154,6 +158,9 @@ struct AppState {
     huggingface_model: String,
     huggingface_max_chars: usize,
     huggingface_base_url: String,
+    huggingface_max_retries: usize,
+    huggingface_backoff_ms: u64,
+    huggingface_backoff_max_ms: u64,
     vespa_endpoint: String,
     vespa_document_endpoint: String,
     vespa_cluster: String,
@@ -352,6 +359,18 @@ async fn main() -> Result<(), AppError> {
         .unwrap_or(HF_DEFAULT_MAX_CHARS);
     let huggingface_base_url = std::env::var("HUGGINGFACE_EMBEDDING_BASE_URL")
         .unwrap_or_else(|_| HF_DEFAULT_BASE_URL.into());
+    let huggingface_max_retries = std::env::var("HUGGINGFACE_EMBEDDING_MAX_RETRIES")
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok())
+        .unwrap_or(HF_DEFAULT_MAX_RETRIES);
+    let huggingface_backoff_ms = std::env::var("HUGGINGFACE_EMBEDDING_BACKOFF_MS")
+        .ok()
+        .and_then(|value| value.parse::<u64>().ok())
+        .unwrap_or(HF_DEFAULT_BACKOFF_MS);
+    let huggingface_backoff_max_ms = std::env::var("HUGGINGFACE_EMBEDDING_BACKOFF_MAX_MS")
+        .ok()
+        .and_then(|value| value.parse::<u64>().ok())
+        .unwrap_or(HF_DEFAULT_BACKOFF_MAX_MS);
 
     fs::create_dir_all(registry_path.parent().unwrap()).await?;
     fs::create_dir_all(&repos_path).await?;
@@ -370,6 +389,9 @@ async fn main() -> Result<(), AppError> {
         huggingface_model,
         huggingface_max_chars,
         huggingface_base_url,
+        huggingface_max_retries,
+        huggingface_backoff_ms,
+        huggingface_backoff_max_ms,
         vespa_endpoint,
         vespa_document_endpoint,
         vespa_cluster,
@@ -1544,28 +1566,110 @@ async fn fetch_hf_embedding(state: &AppState, text: &str) -> Result<Vec<f32>, Ap
         "options": { "wait_for_model": true }
     });
 
-    let mut request = state.hf_client.post(url).json(&payload);
-    if let Some(token) = state.huggingface_token.as_deref() {
-        request = request.bearer_auth(token);
+    let max_retries = state.huggingface_max_retries;
+    let mut backoff = Duration::from_millis(state.huggingface_backoff_ms);
+    let backoff_max = Duration::from_millis(state.huggingface_backoff_max_ms);
+
+    for attempt in 0..=max_retries {
+        let mut request = state.hf_client.post(&url).json(&payload);
+        if let Some(token) = state.huggingface_token.as_deref() {
+            request = request.bearer_auth(token);
+        }
+
+        match request.send().await {
+            Ok(response) => {
+                if response.status().is_success() {
+                    let value: serde_json::Value = response
+                        .json()
+                        .await
+                        .map_err(|err| AppError::HuggingFace(err.to_string()))?;
+                    let embedding = parse_hf_embedding(value)?;
+                    return Ok(normalize_embedding(embedding));
+                }
+
+                let status = response.status();
+                let body = response.text().await.unwrap_or_default();
+                if attempt < max_retries && should_retry_status(status) {
+                    warn!(
+                        "huggingface embedding request failed with {status}; retrying in {:?} (attempt {}/{})",
+                        backoff,
+                        attempt + 1,
+                        max_retries
+                    );
+                    tokio::time::sleep(backoff).await;
+                    backoff = (backoff * 2).min(backoff_max);
+                    continue;
+                }
+
+                return Err(AppError::HuggingFace(format!(
+                    "embedding request failed: {status} {body}"
+                )));
+            }
+            Err(err) => {
+                let detail = format_reqwest_error(&err);
+                if attempt < max_retries {
+                    warn!(
+                        "huggingface embedding request failed to send: {detail}; retrying in {:?} (attempt {}/{})",
+                        backoff,
+                        attempt + 1,
+                        max_retries
+                    );
+                    tokio::time::sleep(backoff).await;
+                    backoff = (backoff * 2).min(backoff_max);
+                    continue;
+                }
+
+                return Err(AppError::HuggingFace(format!(
+                    "embedding request failed to send: {detail}"
+                )));
+            }
+        }
     }
 
-    let response = request.send().await.map_err(|err| {
-        AppError::HuggingFace(format!("embedding request failed to send: {err}"))
-    })?;
-    if !response.status().is_success() {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        return Err(AppError::HuggingFace(format!(
-            "embedding request failed: {status} {body}"
-        )));
+    Err(AppError::HuggingFace(
+        "embedding request exhausted retries".into(),
+    ))
+}
+
+fn should_retry_status(status: StatusCode) -> bool {
+    status == StatusCode::TOO_MANY_REQUESTS
+        || status == StatusCode::REQUEST_TIMEOUT
+        || status.is_server_error()
+}
+
+fn format_reqwest_error(err: &reqwest::Error) -> String {
+    let mut parts = Vec::new();
+    if let Some(url) = err.url() {
+        parts.push(format!("url={url}"));
+    }
+    if err.is_timeout() {
+        parts.push("timeout".into());
+    }
+    if err.is_connect() {
+        parts.push("connect".into());
+    }
+    if err.is_request() {
+        parts.push("request".into());
+    }
+    if err.is_status() {
+        parts.push("status".into());
     }
 
-    let value: serde_json::Value = response
-        .json()
-        .await
-        .map_err(|err| AppError::HuggingFace(err.to_string()))?;
-    let embedding = parse_hf_embedding(value)?;
-    Ok(normalize_embedding(embedding))
+    let mut chain = Vec::new();
+    let mut source = err.source();
+    while let Some(err) = source {
+        chain.push(err.to_string());
+        source = err.source();
+    }
+    if !chain.is_empty() {
+        parts.push(format!("source={}", chain.join(": ")));
+    }
+
+    if parts.is_empty() {
+        err.to_string()
+    } else {
+        format!("{err} ({})", parts.join(", "))
+    }
 }
 
 async fn embed_text(state: &AppState, text: &str) -> Result<Vec<f32>, AppError> {
