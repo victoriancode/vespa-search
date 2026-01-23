@@ -653,18 +653,6 @@ async fn search(
         "query": query,
     });
 
-    if let Some(repo_id) = payload
-        .repo_filter
-        .as_deref()
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-    {
-        if let Some(object) = body.as_object_mut() {
-            let quoted = format!("\"{}\"", escape_yql_string(repo_id));
-            object.insert("repo_id".to_string(), quoted.into());
-        }
-    }
-
     if let Some(profile) = search_mode.profile_name() {
         let query_embedding = VespaEmbedding {
             values: embed_text(&state, query).await?,
@@ -728,6 +716,15 @@ async fn search(
                 snippet,
             });
         }
+    }
+
+    if let Some(repo_id) = payload
+        .repo_filter
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        results.retain(|result| result.repo_id == repo_id);
     }
 
     Ok(Json(SearchResponse { results }))
@@ -2042,7 +2039,7 @@ async fn generate_repo_summary(
     Ok(store)
 }
 
-fn build_search_yql(repo_filter: Option<&str>, mode: SearchMode) -> String {
+fn build_search_yql(_repo_filter: Option<&str>, mode: SearchMode) -> String {
     let mut clauses = Vec::new();
     if matches!(mode, SearchMode::Hybrid | SearchMode::Semantic) {
         clauses.push("{targetHits:100}nearestNeighbor(embedding, query_embedding)".to_string());
@@ -2057,27 +2054,10 @@ fn build_search_yql(repo_filter: Option<&str>, mode: SearchMode) -> String {
         format!("({})", clauses.join(" or "))
     };
 
-    if repo_filter
-        .and_then(|value| {
-            let trimmed = value.trim();
-            if trimmed.is_empty() {
-                None
-            } else {
-                Some(trimmed)
-            }
-        })
-        .is_some()
-    {
-        clause.push_str(" and repo_id = @repo_id");
-    }
     format!(
         "select repo_id, file_path, line_start, line_end, content from sources * where {};",
         clause
     )
-}
-
-fn escape_yql_string(value: &str) -> String {
-    value.replace('\\', "\\\\").replace('\"', "\\\"")
 }
 
 fn build_snippet(content: &str) -> String {
