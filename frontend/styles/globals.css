@@ -351,6 +351,15 @@ button:disabled {
   white-space: nowrap;
 }
 
+.repo-icon-url {
+  max-width: 140px;
+  font-size: 11px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .repo-add {
   display: grid;
   gap: 8px;

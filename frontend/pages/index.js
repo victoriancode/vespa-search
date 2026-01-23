@@ -181,6 +181,7 @@ export default function Home() {
                     </svg>
                   </span>
                   <span className="repo-icon-label">{repo.owner}/{repo.name}</span>
+                  <span className="repo-icon-url">{repo.repo_url}</span>
                 </button>
               ))}
             </div>

@@ -37,7 +37,7 @@ const HF_DEFAULT_BASE_URL: &str = "https://router.huggingface.co/hf-inference/mo
 const HF_DEFAULT_MAX_RETRIES: usize = 3;
 const HF_DEFAULT_BACKOFF_MS: u64 = 500;
 const HF_DEFAULT_BACKOFF_MAX_MS: u64 = 8000;
-const HF_DEFAULT_SUMMARY_MODEL: &str = "facebook/bart-large-cnn";
+const HF_DEFAULT_SUMMARY_MODEL: &str = "sshleifer/distilbart-cnn-12-6";
 const HF_DEFAULT_SUMMARY_MAX_CHARS: usize = 6000;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -2035,7 +2035,7 @@ fn build_search_yql(query: &str, repo_filter: Option<&str>, mode: SearchMode) ->
         clauses.push("{targetHits:100}nearestNeighbor(embedding, query_embedding)".to_string());
     }
     if matches!(mode, SearchMode::Hybrid | SearchMode::Bm25) {
-        clauses.push(format!("content contains \"{}\"", escape_yql_string(query)));
+        clauses.push(format!("userInput(\"{}\")", escape_yql_string(query)));
     }
 
     let mut clause = if clauses.len() == 1 {
@@ -2052,7 +2052,7 @@ fn build_search_yql(query: &str, repo_filter: Option<&str>, mode: SearchMode) ->
             Some(trimmed)
         }
     }) {
-        clause.push_str(" and repo_id contains \"");
+        clause.push_str(" and repo_id = \"");
         clause.push_str(&escape_yql_string(repo_id));
         clause.push('"');
     }
