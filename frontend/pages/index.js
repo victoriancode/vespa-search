@@ -23,48 +23,22 @@ export default function Home() {
   const progressValue = selected ? progressMap[status?.status] ?? 10 : 0;
   const progressLabel = selected ? `${progressValue}%` : '0%';
 
-  const pastelFromString = (value) => {
-    let hash = 0;
-    for (let i = 0; i < value.length; i += 1) {
-      hash = (hash << 5) - hash + value.charCodeAt(i);
-      hash |= 0;
-    }
-    const hue = Math.abs(hash) % 360;
-    return `hsl(${hue} 60% 88%)`;
-  };
-
   const fetchRepos = async () => {
-    const res = await fetch(
-      `https://api.github.com/orgs/${GITHUB_ORG}/repos?per_page=100`
-    );
+    const res = await fetch(`${API_BASE}/repos`);
     if (!res.ok) {
-      throw new Error('Unable to load mirrored repositories');
+      throw new Error('Unable to load repositories');
     }
     const data = await res.json();
-    const mirrors = data.filter((repo) => repo.name.endsWith('-vv-search'));
-    const hydrated = await Promise.all(
-      mirrors.map(async (repo) => {
-        const branch = repo.default_branch || 'main';
-        const stateUrl = `https://raw.githubusercontent.com/${GITHUB_ORG}/${repo.name}/${branch}/.vv/state.json`;
-        const stateRes = await fetch(stateUrl);
-        if (!stateRes.ok) {
-          return null;
-        }
-        const state = await stateRes.json();
-        if (!state.repo_id) {
-          return null;
-        }
-        return {
-          id: state.repo_id,
-          repo_url: state.repo_url,
-          owner: state.owner,
-          name: state.name,
-          mirror_repo: repo.name,
-          mirror_url: repo.html_url
-        };
-      })
-    );
-    setRepos(hydrated.filter(Boolean));
+    const normalized = Array.isArray(data)
+      ? data.map((repo) => ({
+          ...repo,
+          mirror_repo: repo?.name ? `${repo.name}-vv-search` : undefined,
+          mirror_url: repo?.name
+            ? `https://github.com/${GITHUB_ORG}/${repo.name}-vv-search`
+            : undefined
+        }))
+      : [];
+    setRepos(normalized);
   };
 
   const fetchStatus = async (repoId) => {
@@ -172,41 +146,30 @@ export default function Home() {
               <h2>Repositories</h2>
               <span className="subtle">Select one to see status</span>
             </div>
+            <div className="repo-add">
+              <h3>Add Repo</h3>
+              <form onSubmit={handleAddRepo} className="form inline-form">
+                <input
+                  type="url"
+                  placeholder="https://github.com/owner/repo"
+                  value={repoUrl}
+                  onChange={(event) => setRepoUrl(event.target.value)}
+                  required
+                />
+                <button type="submit" className="button-compact" disabled={loading}>
+                  {loading ? 'Adding...' : 'Add Repo'}
+                </button>
+              </form>
+              {error && <p className="error">{error}</p>}
+            </div>
             <div className="repo-grid">
-              <div className="repo-icon repo-icon-add" style={{ background: '#eef2f7' }}>
-                <div className="repo-icon-title">
-                  <span className="repo-icon-mark" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" role="img">
-                      <path
-                        d="M12 5v14M5 12h14"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </span>
-                  <span className="repo-icon-label">Add repo</span>
-                </div>
-                <form onSubmit={handleAddRepo} className="form add-repo-form">
-                  <input
-                    type="url"
-                    placeholder="https://github.com/owner/repo"
-                    value={repoUrl}
-                    onChange={(event) => setRepoUrl(event.target.value)}
-                    required
-                  />
-                  <button type="submit" className="button-compact" disabled={loading}>
-                    {loading ? 'Adding...' : 'Add'}
-                  </button>
-                </form>
-                {error && <p className="error">{error}</p>}
-              </div>
+              {repos.length === 0 && (
+                <p className="status">No repositories registered yet.</p>
+              )}
               {repos.map((repo) => (
                 <button
                   key={repo.id}
-                  className={`repo-icon ${selected?.id === repo.id ? 'active' : ''}`}
-                  style={{ background: pastelFromString(`${repo.owner}/${repo.name}`) }}
+                  className={`repo-icon existing ${selected?.id === repo.id ? 'active' : ''}`}
                   onClick={() => setSelected(repo)}
                 >
                   <span className="repo-icon-mark" aria-hidden="true">
@@ -224,25 +187,6 @@ export default function Home() {
           </section>
 
           <section className="panel-stack">
-            {repos.length > 0 && (
-              <section className="panel highlight">
-                <h2>Add repository</h2>
-                <form onSubmit={handleAddRepo} className="form inline-form">
-                  <input
-                    type="url"
-                    placeholder="https://github.com/owner/repo"
-                    value={repoUrl}
-                    onChange={(event) => setRepoUrl(event.target.value)}
-                    required
-                  />
-                  <button type="submit" className="button-compact" disabled={loading}>
-                    {loading ? 'Adding...' : 'Add Repo'}
-                  </button>
-                </form>
-                {error && <p className="error">{error}</p>}
-              </section>
-            )}
-
             <section className="panel">
             <div className="panel-header">
               <h2>Ingestion Progress</h2>

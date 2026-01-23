@@ -38,7 +38,7 @@ const HF_DEFAULT_MAX_RETRIES: usize = 3;
 const HF_DEFAULT_BACKOFF_MS: u64 = 500;
 const HF_DEFAULT_BACKOFF_MAX_MS: u64 = 8000;
 const HF_DEFAULT_SUMMARY_MODEL: &str = "facebook/bart-large-cnn";
-const HF_DEFAULT_SUMMARY_MAX_CHARS: usize = 12000;
+const HF_DEFAULT_SUMMARY_MAX_CHARS: usize = 6000;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct RepoRecord {
@@ -1571,6 +1571,10 @@ fn truncate_for_embedding<'a>(input: &'a str, max_chars: usize) -> Cow<'a, str> 
     Cow::Owned(input.chars().take(max_chars).collect())
 }
 
+fn truncate_for_summary<'a>(input: &'a str, max_chars: usize) -> Cow<'a, str> {
+    truncate_for_embedding(input, max_chars)
+}
+
 fn normalize_embedding(mut values: Vec<f32>) -> Vec<f32> {
     if values.len() == EMBEDDING_DIM {
         return values;
@@ -1842,7 +1846,7 @@ async fn build_repo_summary_input(
     for file in &files {
         let language = guess_language(file);
         *language_counts.entry(language).or_insert(0) += 1;
-        if file_lines.len() < 200 {
+        if file_lines.len() < 120 {
             file_lines.push(format!("- {}", file.to_string_lossy()));
         }
     }
@@ -1866,15 +1870,16 @@ async fn build_repo_summary_input(
         input.push_str(&file_lines.join("\n"));
         input.push('\n');
     }
+    let summary_limit = state.huggingface_summary_max_chars.min(6000);
     if let Some(readme) = read_repo_readme(repo_path).await {
         let cleaned = sanitize_vespa_content(readme.as_str());
-        let excerpt = truncate_for_embedding(&cleaned, state.huggingface_summary_max_chars / 2);
+        let excerpt = truncate_for_summary(&cleaned, summary_limit / 2);
         input.push_str("\nREADME excerpt:\n");
         input.push_str(excerpt.as_ref());
         input.push('\n');
     }
 
-    Ok(truncate_for_embedding(&input, state.huggingface_summary_max_chars).into_owned())
+    Ok(truncate_for_summary(&input, summary_limit).into_owned())
 }
 
 fn parse_hf_summary(value: serde_json::Value) -> Result<String, AppError> {
@@ -1924,7 +1929,8 @@ async fn fetch_hf_summary(state: &AppState, text: &str) -> Result<String, AppErr
         "parameters": {
             "max_length": 220,
             "min_length": 80,
-            "do_sample": false
+            "do_sample": false,
+            "truncation": true
         },
         "options": { "wait_for_model": true }
     });
@@ -2000,7 +2006,17 @@ async fn generate_repo_summary(
     vv_path: &StdPath,
 ) -> Result<SummaryStore, AppError> {
     let input = build_repo_summary_input(state, record, repo_path).await?;
-    let summary = fetch_hf_summary(state, input.as_ref()).await?;
+    let summary = match fetch_hf_summary(state, input.as_ref()).await {
+        Ok(summary) => summary,
+        Err(AppError::HuggingFace(message))
+            if message.contains("index out of range")
+                || message.contains("Bad Request") =>
+        {
+            let shorter = truncate_for_summary(input.as_ref(), 2000);
+            fetch_hf_summary(state, shorter.as_ref()).await?
+        }
+        Err(err) => return Err(err),
+    };
     let mut store = read_summary_store(vv_path).await.unwrap_or_default();
     let entry = SummaryEntry {
         version: store.next_version(),

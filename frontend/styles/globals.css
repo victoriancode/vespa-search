@@ -297,9 +297,10 @@ button:disabled {
 
 .repo-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 16px;
   align-items: start;
+  justify-items: stretch;
 }
 
 .repo-icon {
@@ -311,6 +312,7 @@ button:disabled {
   justify-items: center;
   text-align: center;
   aspect-ratio: 1.2 / 0.8;
+  width: 100%;
   max-width: 180px;
   cursor: pointer;
   color: #0f172a;
@@ -321,6 +323,10 @@ button:disabled {
 .repo-icon.active {
   outline: 2px solid #0f172a;
   outline-offset: 2px;
+}
+
+.repo-icon.existing {
+  background: #e7f8e2;
 }
 
 .repo-icon-mark {
@@ -345,43 +351,16 @@ button:disabled {
   white-space: nowrap;
 }
 
-.repo-icon-add {
-  background: #eef2f7;
-  text-align: left;
-  justify-items: stretch;
-  align-content: start;
-}
-
-.repo-icon-title {
-  display: flex;
-  align-items: center;
+.repo-add {
+  display: grid;
   gap: 8px;
-  width: 100%;
-  margin-top: -4px;
+  margin-bottom: 16px;
 }
 
-.repo-icon-add .repo-icon-label {
-  max-width: none;
-  text-align: left;
-  white-space: nowrap;
-}
-
-.add-repo-form {
-  grid-template-columns: 1fr;
-  gap: 8px;
-  width: 100%;
-  min-width: 0;
-}
-
-.add-repo-form input[type='url'] {
-  padding: 8px 10px;
-  font-size: 12px;
-  width: 100%;
-  min-width: 0;
-}
-
-.add-repo-form button {
-  width: 100%;
+.repo-add h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 16px;
 }
 
 .journey {
@@ -496,12 +475,6 @@ button:disabled {
   padding: 14px;
 }
 
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
 .summary-card {
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -522,14 +495,6 @@ button:disabled {
   font-size: 13px;
   line-height: 1.6;
   color: var(--text);
-}
-
-.summary-history-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
 }
 
 .history-controls {
@@ -655,9 +620,6 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
-  .summary-grid {
-    grid-template-columns: 1fr;
-  }
 
   .search-bar.inline {
     width: 100%;

@@ -115,65 +115,56 @@ export default function RepoWiki() {
 
         <section className="split-layout">
           <aside className="panel boxed wiki-panel">
-            <div className="panel-header">
+            <div className="panel-header summary-header">
               <h2>Wiki overview</h2>
-              <span className="subtle">Auto-generated summary</span>
-            </div>
-            <div className="summary-grid">
-              <section className="summary-card">
-                <header>
-                  <h3>Auto summary</h3>
-                </header>
-                <div className="summary-text">{summary || 'Summary not available yet.'}</div>
+              <div className="history-controls">
                 <button
                   type="button"
-                  className="secondary"
-                  onClick={handleUpdateSummary}
-                  disabled={summaryLoading}
+                  className="icon-button"
+                  onClick={() =>
+                    setSummaryIndex((index) => Math.min(index + 1, historyCount - 1))
+                  }
+                  disabled={historyCount === 0 || summaryIndex >= historyCount - 1}
                 >
-                  {summaryLoading ? 'Updating...' : 'Update summary'}
+                  ←
                 </button>
-                {summaryError && <p className="error">{summaryError}</p>}
-              </section>
-              <section className="summary-card history">
-                <header className="summary-history-header">
-                  <h3>Summary history</h3>
-                  <div className="history-controls">
-                    <button
-                      type="button"
-                      className="icon-button"
-                      onClick={() =>
-                        setSummaryIndex((index) => Math.min(index + 1, historyCount - 1))
-                      }
-                      disabled={historyCount === 0 || summaryIndex >= historyCount - 1}
-                    >
-                      ←
-                    </button>
-                    <span className="subtle">
-                      {historyCount > 0
-                        ? `v${activeHistory?.version ?? ''} of ${historyCount}`
-                        : 'No history'}
-                    </span>
-                    <button
-                      type="button"
-                      className="icon-button"
-                      onClick={() => setSummaryIndex((index) => Math.max(index - 1, 0))}
-                      disabled={historyCount === 0 || summaryIndex === 0}
-                    >
-                      →
-                    </button>
-                  </div>
-                </header>
-                <div className="summary-text">
-                  {activeHistory?.summary || 'No summary history yet.'}
-                </div>
-                {activeHistory && (
-                  <span className="subtle">
-                    Generated {new Date(activeHistory.created_at).toLocaleString()}
-                  </span>
-                )}
-              </section>
+                <span className="subtle">
+                  {historyCount > 0
+                    ? `v${activeHistory?.version ?? ''} of ${historyCount}`
+                    : 'No history'}
+                </span>
+                <button
+                  type="button"
+                  className="icon-button"
+                  onClick={() => setSummaryIndex((index) => Math.max(index - 1, 0))}
+                  disabled={historyCount === 0 || summaryIndex === 0}
+                >
+                  →
+                </button>
+              </div>
             </div>
+            <section className="summary-card">
+              <header>
+                <h3>Auto summary</h3>
+              </header>
+              <div className="summary-text">
+                {activeHistory?.summary || summary || 'Summary not available yet.'}
+              </div>
+              {activeHistory && (
+                <span className="subtle">
+                  Generated {new Date(activeHistory.created_at).toLocaleString()}
+                </span>
+              )}
+              <button
+                type="button"
+                className="secondary"
+                onClick={handleUpdateSummary}
+                disabled={summaryLoading}
+              >
+                {summaryLoading ? 'Updating...' : 'Update summary'}
+              </button>
+              {summaryError && <p className="error">{summaryError}</p>}
+            </section>
           </aside>
 
           <section className="panel search-panel">
