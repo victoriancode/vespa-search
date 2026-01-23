@@ -38,7 +38,8 @@ const HF_DEFAULT_MAX_RETRIES: usize = 3;
 const HF_DEFAULT_BACKOFF_MS: u64 = 500;
 const HF_DEFAULT_BACKOFF_MAX_MS: u64 = 8000;
 const HF_DEFAULT_SUMMARY_MODEL: &str = "sshleifer/distilbart-cnn-12-6";
-const HF_DEFAULT_SUMMARY_MAX_CHARS: usize = 6000;
+const HF_DEFAULT_SUMMARY_MAX_CHARS: usize = 3200;
+const HF_DEFAULT_SUMMARY_TOP_FILES: usize = 60;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct RepoRecord {
@@ -190,6 +191,7 @@ struct AppState {
     huggingface_backoff_max_ms: u64,
     huggingface_summary_model: String,
     huggingface_summary_max_chars: usize,
+    huggingface_summary_top_files: usize,
     vespa_endpoint: String,
     vespa_document_endpoint: String,
     vespa_cluster: String,
@@ -406,6 +408,10 @@ async fn main() -> Result<(), AppError> {
         .ok()
         .and_then(|value| value.parse::<usize>().ok())
         .unwrap_or(HF_DEFAULT_SUMMARY_MAX_CHARS);
+    let huggingface_summary_top_files = std::env::var("HUGGINGFACE_SUMMARY_TOP_FILES")
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok())
+        .unwrap_or(HF_DEFAULT_SUMMARY_TOP_FILES);
 
     fs::create_dir_all(registry_path.parent().unwrap()).await?;
     fs::create_dir_all(&repos_path).await?;
@@ -429,6 +435,7 @@ async fn main() -> Result<(), AppError> {
         huggingface_backoff_max_ms,
         huggingface_summary_model,
         huggingface_summary_max_chars,
+        huggingface_summary_top_files,
         vespa_endpoint,
         vespa_document_endpoint,
         vespa_cluster,
@@ -1878,10 +1885,11 @@ async fn build_repo_summary_input(
     let files = list_repo_files(repo_path).await?;
     let mut language_counts: HashMap<String, usize> = HashMap::new();
     let mut file_lines = Vec::new();
+    let top_files = state.huggingface_summary_top_files;
     for file in &files {
         let language = guess_language(file);
         *language_counts.entry(language).or_insert(0) += 1;
-        if file_lines.len() < 120 {
+        if file_lines.len() < top_files {
             file_lines.push(format!("- {}", file.to_string_lossy()));
         }
     }
@@ -1901,50 +1909,20 @@ async fn build_repo_summary_input(
         input.push_str(&format!("\nLanguages: {language_summary}\n"));
     }
     if !file_lines.is_empty() {
-        input.push_str("\nFile tree (first 200 files):\n");
+        input.push_str(&format!(
+            "\nFile tree (first {} files):\n",
+            top_files
+        ));
         input.push_str(&file_lines.join("\n"));
         input.push('\n');
     }
-    let summary_limit = state.huggingface_summary_max_chars.min(6000);
+    let summary_limit = state.huggingface_summary_max_chars;
     if let Some(readme) = read_repo_readme(repo_path).await {
         let cleaned = sanitize_vespa_content(readme.as_str());
-        let excerpt = truncate_for_summary(&cleaned, summary_limit / 2);
+        let excerpt = truncate_for_summary(&cleaned, (summary_limit / 2).min(1600));
         input.push_str("\nREADME excerpt:\n");
         input.push_str(excerpt.as_ref());
         input.push('\n');
-    }
-
-    let mut docs_files = files
-        .iter()
-        .filter(|path| {
-            let path_str = path.to_string_lossy().to_lowercase();
-            let is_doc_dir = path_str.starts_with("docs/")
-                || path_str.starts_with("doc/")
-                || path_str.contains("/docs/")
-                || path_str.contains("/doc/");
-            if !is_doc_dir {
-                return false;
-            }
-            matches!(
-                path.extension().and_then(|ext| ext.to_str()).unwrap_or(""),
-                "md" | "mdx" | "txt"
-            )
-        })
-        .cloned()
-        .collect::<Vec<_>>();
-    docs_files.sort();
-    if !docs_files.is_empty() {
-        input.push_str("\nDocs excerpts:\n");
-        for doc_path in docs_files.into_iter().take(3) {
-            let absolute = repo_path.join(&doc_path);
-            if let Ok(content) = fs::read_to_string(&absolute).await {
-                let cleaned = sanitize_vespa_content(&content);
-                let excerpt = truncate_for_summary(&cleaned, 1200);
-                input.push_str(&format!("\nFile: {}\n", doc_path.to_string_lossy()));
-                input.push_str(excerpt.as_ref());
-                input.push('\n');
-            }
-        }
     }
 
     Ok(truncate_for_summary(&input, summary_limit).into_owned())
@@ -1987,7 +1965,7 @@ fn parse_hf_summary(value: serde_json::Value) -> Result<String, AppError> {
 }
 
 async fn fetch_hf_summary(state: &AppState, text: &str) -> Result<String, AppError> {
-    fetch_hf_summary_with_params(state, text, 220, 80).await
+    fetch_hf_summary_with_params(state, text, 160, 40).await
 }
 
 async fn fetch_hf_summary_with_params(
@@ -2083,25 +2061,25 @@ async fn generate_repo_summary(
     vv_path: &StdPath,
 ) -> Result<SummaryStore, AppError> {
     let input = build_repo_summary_input(state, record, repo_path).await?;
-    let summary = match fetch_hf_summary_with_params(state, input.as_ref(), 220, 80).await {
+    let summary = match fetch_hf_summary_with_params(state, input.as_ref(), 160, 40).await {
         Ok(summary) => summary,
         Err(AppError::HuggingFace(message))
             if message.contains("index out of range")
                 || message.contains("Bad Request") =>
         {
-            let shorter = truncate_for_summary(input.as_ref(), 2000);
-            fetch_hf_summary_with_params(state, shorter.as_ref(), 220, 80).await?
+            let shorter = truncate_for_summary(input.as_ref(), 1600);
+            fetch_hf_summary_with_params(state, shorter.as_ref(), 160, 40).await?
         }
         Err(err) => return Err(err),
     };
-    let long_summary = match fetch_hf_summary_with_params(state, input.as_ref(), 420, 160).await {
+    let long_summary = match fetch_hf_summary_with_params(state, input.as_ref(), 280, 90).await {
         Ok(summary) => summary,
         Err(AppError::HuggingFace(message))
             if message.contains("index out of range")
                 || message.contains("Bad Request") =>
         {
-            let shorter = truncate_for_summary(input.as_ref(), 2000);
-            fetch_hf_summary_with_params(state, shorter.as_ref(), 420, 160).await?
+            let shorter = truncate_for_summary(input.as_ref(), 1600);
+            fetch_hf_summary_with_params(state, shorter.as_ref(), 280, 90).await?
         }
         Err(err) => return Err(err),
     };
