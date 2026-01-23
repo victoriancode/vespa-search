@@ -49,27 +49,84 @@ export default function RepoWiki() {
   };
 
   return (
-    <div className="page">
-      <header className="header">
-        <div>
-          <h1>CodeWiki</h1>
-          <p>A curated, ingestion-first wiki experience for your repository.</p>
+    <div className="app-shell">
+      <header className="topbar">
+        <div className="brand">
+          <span className="logo">V</span>
+          <div>
+            <strong>Vespa Search</strong>
+            <span>CodeWiki</span>
+          </div>
         </div>
-        <div className="header-actions">
+        <div className="topbar-actions">
           <Link href="/" className="secondary">
             Back to repos
           </Link>
         </div>
       </header>
 
-      <main className="stack">
-        <section className="card wiki">
-          <pre>{wiki}</pre>
+      <main className="content">
+        <section className="repo-hero">
+          <div>
+            <h1>CodeWiki workspace</h1>
+            <p>
+              Explore the generated wiki and run deep semantic searches across this repository.
+            </p>
+          </div>
         </section>
 
-        <section className="card search">
-          <h2>Search this repo</h2>
-          <form onSubmit={handleSearch} className="form search-form">
+        <section className="split-layout">
+          <aside className="panel boxed wiki-panel">
+            <div className="panel-header">
+              <h2>Wiki overview</h2>
+              <span className="subtle">Auto-generated summary</span>
+            </div>
+            <pre>{wiki}</pre>
+          </aside>
+
+          <section className="panel search-panel">
+            <div className="panel-header">
+              <h2>Search</h2>
+              <div className="mode-toggle">
+                <button className="pill active" type="button">
+                  Fast
+                </button>
+                <button className="pill ghost" type="button">
+                  Deep
+                </button>
+              </div>
+            </div>
+            {searchError && <p className="error">{searchError}</p>}
+            {!searchError && results.length === 0 && !searching && (
+              <div className="empty-state">
+                <p className="status">No results yet. Try a different query.</p>
+              </div>
+            )}
+            {results.length > 0 && (
+              <div className="result-list">
+                {results.map((result, index) => (
+                  <article className="result-card" key={`${result.file_path}-${index}`}>
+                    <div className="result-header">
+                      <div>
+                        <strong className="result-path">{result.file_path}</strong>
+                        <span className="result-meta">
+                          Lines {result.line_start}-{result.line_end}
+                        </span>
+                      </div>
+                      <span className="pill ghost">Code</span>
+                    </div>
+                    <pre className="result-snippet">
+                      <code>{result.snippet}</code>
+                    </pre>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        </section>
+
+        <section className="search-footer">
+          <form onSubmit={handleSearch} className="search-bar bottom">
             <input
               type="text"
               placeholder="Search for functions, files, or concepts"
@@ -80,25 +137,6 @@ export default function RepoWiki() {
               {searching ? 'Searching...' : 'Search'}
             </button>
           </form>
-          {searchError && <p className="error">{searchError}</p>}
-          {!searchError && results.length === 0 && !searching && (
-            <p className="status">No results yet. Try a different query.</p>
-          )}
-          {results.length > 0 && (
-            <div className="search-results">
-              {results.map((result, index) => (
-                <div className="search-result" key={`${result.file_path}-${index}`}>
-                  <div className="search-meta">
-                    <strong>{result.file_path}</strong>
-                    <span>
-                      Lines {result.line_start}-{result.line_end}
-                    </span>
-                  </div>
-                  <pre>{result.snippet}</pre>
-                </div>
-              ))}
-            </div>
-          )}
         </section>
       </main>
     </div>

@@ -1,5 +1,7 @@
 /node_modules
 /frontend/.next
+/frontend/package-lock.json
+/frontend/node_modules/
 /backend/target
 /backend/data/registry.json
 /repos

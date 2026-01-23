@@ -116,80 +116,108 @@ export default function Home() {
   };
 
   return (
-    <div className="page">
-      <header className="header">
-        <div>
-          <h1>Vespa Code Search + CodeWiki</h1>
-          <p>Ingest any public GitHub repository, generate a CodeWiki, then enable semantic search.</p>
+    <div className="app-shell">
+      <header className="topbar">
+        <div className="brand">
+          <div>
+            <strong>Vespa Vector Search</strong>
+            <span>CodeWiki</span>
+          </div>
+        </div>
+        <div className="topbar-actions">
+          <span className="pill">Live indexing</span>
+          <span className="pill ghost">Org: {GITHUB_ORG}</span>
         </div>
       </header>
 
-      <main className="grid">
-        <section className="card">
-          <h2>Add repository</h2>
-          <form onSubmit={handleAddRepo} className="form">
-            <input
-              type="url"
-              placeholder="https://github.com/owner/repo"
-              value={repoUrl}
-              onChange={(event) => setRepoUrl(event.target.value)}
-              required
-            />
-            <button type="submit" disabled={loading}>
-              {loading ? 'Adding...' : 'Add Repo'}
-            </button>
-          </form>
-          {error && <p className="error">{error}</p>}
-        </section>
-
-        <section className="card">
-          <h2>Repositories</h2>
-          <div className="repo-list">
-            {repos.length === 0 && <p>No repositories registered yet.</p>}
-            {repos.map((repo) => (
-              <button
-                key={repo.id}
-                className={`repo-item ${selected?.id === repo.id ? 'active' : ''}`}
-                onClick={() => setSelected(repo)}
-              >
-                <strong>{repo.owner}/{repo.name}</strong>
-                <span>{repo.repo_url}</span>
+      <main className="content">
+        <section className="hero">
+          <div className="hero-copy">
+            <h1>Deep, fast code search for any repo.</h1>
+            <p>
+              Ingest public GitHub repositories, generate a living CodeWiki, and query
+              across file paths, symbols, and natural language questions.
+            </p>
+            <div className="hero-meta">
+              <span className="pill">Semantic + keyword</span>
+              <span className="pill ghost">Auto-snippets</span>
+              <span className="pill ghost">Vespa powered</span>
+            </div>
+          </div>
+          <section className="panel highlight">
+            <h2>Add repository</h2>
+            <form onSubmit={handleAddRepo} className="form">
+              <input
+                type="url"
+                placeholder="https://github.com/owner/repo"
+                value={repoUrl}
+                onChange={(event) => setRepoUrl(event.target.value)}
+                required
+              />
+              <button type="submit" disabled={loading}>
+                {loading ? 'Adding...' : 'Add Repo'}
               </button>
-            ))}
-          </div>
+            </form>
+            {error && <p className="error">{error}</p>}
+          </section>
         </section>
 
-        <section className="card">
-          <h2>Ingestion Progress</h2>
-          <div className="progress">
-            <div
-              className={`progress-bar ${status?.status === 'complete' ? 'complete' : ''}`}
-              style={{
-                width:
-                  status?.status === 'complete'
-                    ? '100%'
-                    : status?.status === 'in_progress'
-                    ? '60%'
-                    : '10%'
-              }}
-            />
-          </div>
-          <p className="status">
-            {status?.message || 'Select a repo to check status.'}
-          </p>
-          <div className="actions">
-            <button onClick={handleIngest} disabled={!selected}>
-              Start ingestion
-            </button>
-            {status?.status === 'complete' && selected && (
-              <Link
-                className="secondary"
-                href={{ pathname: '/repo', query: { id: selected.id } }}
-              >
-                View repo
-              </Link>
-            )}
-          </div>
+        <section className="panel-grid">
+          <section className="panel boxed">
+            <div className="panel-header">
+              <h2>Repositories</h2>
+              <span className="subtle">Select one to see status</span>
+            </div>
+            <div className="repo-list">
+              {repos.length === 0 && <p className="status">No repositories registered yet.</p>}
+              {repos.map((repo) => (
+                <button
+                  key={repo.id}
+                  className={`repo-item ${selected?.id === repo.id ? 'active' : ''}`}
+                  onClick={() => setSelected(repo)}
+                >
+                  <strong>{repo.owner}/{repo.name}</strong>
+                  <span>{repo.repo_url}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="panel">
+            <div className="panel-header">
+              <h2>Ingestion Progress</h2>
+              <span className="subtle">Queue status</span>
+            </div>
+            <div className="progress">
+              <div
+                className={`progress-bar ${status?.status === 'complete' ? 'complete' : ''}`}
+                style={{
+                  width:
+                    status?.status === 'complete'
+                      ? '100%'
+                      : status?.status === 'in_progress'
+                      ? '60%'
+                      : '10%'
+                }}
+              />
+            </div>
+            <p className="status">
+              {status?.message || 'Select a repo to check status.'}
+            </p>
+            <div className="actions">
+              <button onClick={handleIngest} disabled={!selected}>
+                Start ingestion
+              </button>
+              {status?.status === 'complete' && selected && (
+                <Link
+                  className="secondary"
+                  href={{ pathname: '/repo', query: { id: selected.id } }}
+                >
+                  View repo
+                </Link>
+              )}
+            </div>
+          </section>
         </section>
       </main>
     </div>

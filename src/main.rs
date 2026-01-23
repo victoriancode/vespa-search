@@ -10,6 +10,7 @@ use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
+    borrow::Cow,
     collections::HashMap,
     convert::Infallible,
     path::{Path as StdPath, PathBuf},
@@ -29,6 +30,8 @@ use tracing::{error, info, warn};
 use uuid::Uuid;
 
 const EMBEDDING_DIM: usize = 768;
+const HF_DEFAULT_MODEL: &str = "sentence-transformers/all-mpnet-base-v2";
+const HF_DEFAULT_MAX_CHARS: usize = 4000;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct RepoRecord {
@@ -146,12 +149,16 @@ struct AppState {
     status_tx: broadcast::Sender<IngestEvent>,
     github_org: Option<String>,
     github_token: Option<String>,
+    huggingface_token: Option<String>,
+    huggingface_model: String,
+    huggingface_max_chars: usize,
     vespa_endpoint: String,
     vespa_document_endpoint: String,
     vespa_cluster: String,
     vespa_namespace: String,
     vespa_document_type: String,
     http_client: reqwest::Client,
+    hf_client: reqwest::Client,
 }
 
 #[derive(Error, Debug)]
@@ -172,6 +179,8 @@ enum AppError {
     VespaRejected(String),
     #[error("github error: {0}")]
     GitHub(String),
+    #[error("huggingface error: {0}")]
+    HuggingFace(String),
 }
 
 impl IntoResponse for AppError {
@@ -182,7 +191,10 @@ impl IntoResponse for AppError {
             AppError::Config(_) | AppError::Io(_) | AppError::Serde(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
             }
-            AppError::VespaRequest(_) | AppError::VespaRejected(_) | AppError::GitHub(_) => {
+            AppError::VespaRequest(_)
+            | AppError::VespaRejected(_)
+            | AppError::GitHub(_)
+            | AppError::HuggingFace(_) => {
                 StatusCode::BAD_GATEWAY
             }
         };
@@ -293,6 +305,13 @@ fn build_http_client() -> Result<reqwest::Client, AppError> {
     }
 }
 
+fn build_hf_client() -> Result<reqwest::Client, AppError> {
+    reqwest::Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()
+        .map_err(|err| AppError::Config(format!("failed to build HuggingFace client: {err}")))
+}
+
 #[tokio::main]
 async fn main() -> Result<(), AppError> {
     tracing_subscriber::fmt().with_env_filter("info").init();
@@ -320,6 +339,15 @@ async fn main() -> Result<(), AppError> {
         std::env::var("VESPA_DOCUMENT_TYPE").unwrap_or_else(|_| "codesearch".into());
     let github_org = std::env::var("GITHUB_ORG").ok();
     let github_token = std::env::var("GITHUB_TOKEN").ok();
+    let huggingface_token = std::env::var("HUGGINGFACE_TOKEN")
+        .or_else(|_| std::env::var("HF_API_TOKEN"))
+        .ok();
+    let huggingface_model =
+        std::env::var("HUGGINGFACE_EMBEDDING_MODEL").unwrap_or_else(|_| HF_DEFAULT_MODEL.into());
+    let huggingface_max_chars = std::env::var("HUGGINGFACE_EMBEDDING_MAX_CHARS")
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok())
+        .unwrap_or(HF_DEFAULT_MAX_CHARS);
 
     fs::create_dir_all(registry_path.parent().unwrap()).await?;
     fs::create_dir_all(&repos_path).await?;
@@ -334,12 +362,16 @@ async fn main() -> Result<(), AppError> {
         status_tx,
         github_org,
         github_token,
+        huggingface_token,
+        huggingface_model,
+        huggingface_max_chars,
         vespa_endpoint,
         vespa_document_endpoint,
         vespa_cluster,
         vespa_namespace,
         vespa_document_type,
         http_client: build_http_client()?,
+        hf_client: build_hf_client()?,
     };
 
     if let Err(err) = sync_registry_from_github(&state).await {
@@ -518,9 +550,8 @@ async fn search(
         return Ok(Json(SearchResponse { results: vec![] }));
     }
 
-    let yql = build_search_yql(query, payload.repo_filter.as_deref());
-
     let search_mode = resolve_search_mode(payload.search_mode.as_deref());
+    let yql = build_search_yql(query, payload.repo_filter.as_deref(), search_mode);
     let search_url = vespa_search_url(&state)?;
     let mut body = serde_json::json!({
         "yql": yql,
@@ -529,7 +560,7 @@ async fn search(
 
     if let Some(profile) = search_mode.profile_name() {
         let query_embedding = VespaEmbedding {
-            values: build_query_embedding(query, EMBEDDING_DIM),
+            values: embed_text(&state, query).await?,
         };
         let embedding_value = serde_json::to_value(&query_embedding)?;
         if let Some(object) = body.as_object_mut() {
@@ -666,7 +697,10 @@ async fn fetch_github_repo_state(
     if let Some(token) = state.github_token.as_deref() {
         request = request.header("Authorization", format!("token {token}"));
     }
-    let response = request.send().await?;
+    let response = request
+        .send()
+        .await
+        .map_err(|err| AppError::HuggingFace(err.to_string()))?;
     if response.status() == StatusCode::NOT_FOUND {
         return Ok(None);
     }
@@ -800,14 +834,46 @@ async fn write_status(
 
 async fn read_status(vv_path: &StdPath) -> Result<Json<StatusResponse>, AppError> {
     let path = vv_path.join("status.json");
-    if !path.exists() {
+    if fs::metadata(&path).await.is_err() {
+        let chunks_path = vv_path.join("chunks.jsonl");
+        if let Ok(metadata) = fs::metadata(&chunks_path).await {
+            if metadata.len() > 0 {
+                return Ok(Json(StatusResponse {
+                    status: "complete".into(),
+                    message: Some("Ingestion complete (status recovered).".into()),
+                }));
+            }
+        }
+
+        let wiki_path = vv_path.join("wiki/index.md");
+        if fs::metadata(&wiki_path).await.is_ok() {
+            return Ok(Json(StatusResponse {
+                status: "unknown".into(),
+                message: Some(
+                    "Ingestion artifacts found, but status is unavailable. Re-run ingestion to refresh."
+                        .into(),
+                ),
+            }));
+        }
+
         return Ok(Json(StatusResponse {
             status: "unknown".into(),
-            message: None,
+            message: Some(
+                "Status not available on this instance. Re-run ingestion if needed.".into(),
+            ),
         }));
     }
+
     let data = fs::read(path).await?;
-    let status = serde_json::from_slice(&data)?;
+    let mut status: StatusResponse = serde_json::from_slice(&data)?;
+    if status.message.is_none() {
+        status.message = Some(match status.status.as_str() {
+            "complete" => "Ingestion complete.".into(),
+            "in_progress" => "Ingestion in progress.".into(),
+            "error" => "Ingestion failed. Check backend logs.".into(),
+            _ => "Status unavailable. Re-run ingestion if needed.".into(),
+        });
+    }
     Ok(Json(status))
 }
 
@@ -1090,7 +1156,6 @@ async fn feed_repo_to_vespa(
     const MAX_CONTENT_BYTES: usize = 200_000;
 
     let files = list_repo_files(repo_path).await?;
-    let embedding = vec![0.0_f32; EMBEDDING_DIM];
     let mut indexed = 0usize;
 
     let chunks_path = vv_path.join("chunks.jsonl");
@@ -1134,6 +1199,8 @@ async fn feed_repo_to_vespa(
         let last_indexed_at = Utc::now().timestamp_millis();
         let chunk_id_for_chunk = chunk_id.clone();
         let content_sha_for_chunk = content_sha.clone();
+        let embedding_values =
+            embed_content_with_cache(state, vv_path, &content, &content_sha).await?;
 
         let doc_id = format!("{}-{}", record.id, chunk_id);
         let put = VespaPut {
@@ -1155,7 +1222,7 @@ async fn feed_repo_to_vespa(
                 content,
                 content_sha,
                 embedding: VespaEmbedding {
-                    values: embedding.clone(),
+                    values: embedding_values,
                 },
                 last_indexed_at,
             },
@@ -1369,33 +1436,182 @@ fn resolve_search_mode(value: Option<&str>) -> SearchMode {
     }
 }
 
-fn build_query_embedding(query: &str, dims: usize) -> Vec<f32> {
-    let mut seed = Sha256::digest(query.as_bytes()).to_vec();
-    let mut values = Vec::with_capacity(dims);
-    let mut offset = 0usize;
-
-    while values.len() < dims {
-        if offset >= seed.len() {
-            seed = Sha256::digest(&seed).to_vec();
-            offset = 0;
-        }
-        let byte = seed[offset];
-        let value = (byte as f32 / 255.0) * 2.0 - 1.0;
-        values.push(value);
-        offset += 1;
+fn truncate_for_embedding<'a>(input: &'a str, max_chars: usize) -> Cow<'a, str> {
+    if input.chars().count() <= max_chars {
+        return Cow::Borrowed(input);
     }
+    Cow::Owned(input.chars().take(max_chars).collect())
+}
 
-    let norm = values.iter().map(|v| v * v).sum::<f32>().sqrt();
-    if norm > 0.0 {
-        for value in &mut values {
-            *value /= norm;
-        }
+fn normalize_embedding(mut values: Vec<f32>) -> Vec<f32> {
+    if values.len() == EMBEDDING_DIM {
+        return values;
+    }
+    warn!(
+        "embedding dimension mismatch: got {}, expected {}",
+        values.len(),
+        EMBEDDING_DIM
+    );
+    if values.len() > EMBEDDING_DIM {
+        values.truncate(EMBEDDING_DIM);
+    } else {
+        values.resize(EMBEDDING_DIM, 0.0);
     }
     values
 }
 
-fn build_search_yql(query: &str, repo_filter: Option<&str>) -> String {
-    let mut clause = format!("content contains \"{}\"", escape_yql_string(query));
+fn parse_hf_embedding(value: serde_json::Value) -> Result<Vec<f32>, AppError> {
+    match value {
+        serde_json::Value::Array(values) => {
+            if values.is_empty() {
+                return Err(AppError::HuggingFace(
+                    "empty embedding response".into(),
+                ));
+            }
+            if values[0].is_number() {
+                let mut embedding = Vec::with_capacity(values.len());
+                for value in values {
+                    let number = value.as_f64().ok_or_else(|| {
+                        AppError::HuggingFace("invalid embedding value".into())
+                    })?;
+                    embedding.push(number as f32);
+                }
+                return Ok(embedding);
+            }
+
+            if values[0].is_array() {
+                let mut summed: Vec<f32> = Vec::new();
+                let mut count = 0usize;
+                for row in values {
+                    let row_values = row.as_array().ok_or_else(|| {
+                        AppError::HuggingFace("invalid embedding row".into())
+                    })?;
+                    if summed.is_empty() {
+                        summed = vec![0.0; row_values.len()];
+                    }
+                    for (index, value) in row_values.iter().enumerate() {
+                        let number = value.as_f64().ok_or_else(|| {
+                            AppError::HuggingFace("invalid embedding value".into())
+                        })?;
+                        if index < summed.len() {
+                            summed[index] += number as f32;
+                        }
+                    }
+                    count += 1;
+                }
+                if count == 0 {
+                    return Err(AppError::HuggingFace(
+                        "empty embedding response".into(),
+                    ));
+                }
+                for value in &mut summed {
+                    *value /= count as f32;
+                }
+                return Ok(summed);
+            }
+
+            Err(AppError::HuggingFace(
+                "unsupported embedding response format".into(),
+            ))
+        }
+        serde_json::Value::Object(map) => {
+            if let Some(error) = map.get("error").and_then(|value| value.as_str()) {
+                return Err(AppError::HuggingFace(error.to_string()));
+            }
+            Err(AppError::HuggingFace(
+                "unexpected embedding response".into(),
+            ))
+        }
+        _ => Err(AppError::HuggingFace(
+            "unexpected embedding response".into(),
+        )),
+    }
+}
+
+async fn fetch_hf_embedding(state: &AppState, text: &str) -> Result<Vec<f32>, AppError> {
+    let url = format!(
+        "https://api-inference.huggingface.co/pipeline/feature-extraction/{}",
+        state.huggingface_model
+    );
+    let payload = serde_json::json!({
+        "inputs": text,
+        "options": { "wait_for_model": true }
+    });
+
+    let mut request = state.hf_client.post(url).json(&payload);
+    if let Some(token) = state.huggingface_token.as_deref() {
+        request = request.bearer_auth(token);
+    }
+
+    let response = request.send().await?;
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        return Err(AppError::HuggingFace(format!(
+            "embedding request failed: {status} {body}"
+        )));
+    }
+
+    let value: serde_json::Value = response
+        .json()
+        .await
+        .map_err(|err| AppError::HuggingFace(err.to_string()))?;
+    let embedding = parse_hf_embedding(value)?;
+    Ok(normalize_embedding(embedding))
+}
+
+async fn embed_text(state: &AppState, text: &str) -> Result<Vec<f32>, AppError> {
+    let truncated = truncate_for_embedding(text, state.huggingface_max_chars);
+    fetch_hf_embedding(state, truncated.as_ref()).await
+}
+
+async fn embed_content_with_cache(
+    state: &AppState,
+    vv_path: &StdPath,
+    content: &str,
+    content_sha: &str,
+) -> Result<Vec<f32>, AppError> {
+    let vectors_path = vv_path.join("vectors");
+    fs::create_dir_all(&vectors_path).await?;
+    let cache_path = vectors_path.join(format!("{content_sha}.json"));
+    if let Ok(data) = fs::read(&cache_path).await {
+        if let Ok(values) = serde_json::from_slice::<Vec<f32>>(&data) {
+            if values.len() == EMBEDDING_DIM {
+                return Ok(values);
+            }
+            warn!(
+                "cached embedding dimension mismatch for {} (got {}, expected {})",
+                cache_path.display(),
+                values.len(),
+                EMBEDDING_DIM
+            );
+        }
+    }
+
+    let embedding = embed_text(state, content).await?;
+    if let Ok(serialized) = serde_json::to_vec(&embedding) {
+        if let Err(err) = fs::write(&cache_path, serialized).await {
+            warn!("failed to cache embedding at {}: {err}", cache_path.display());
+        }
+    }
+    Ok(embedding)
+}
+
+fn build_search_yql(query: &str, repo_filter: Option<&str>, mode: SearchMode) -> String {
+    let mut clauses = Vec::new();
+    if matches!(mode, SearchMode::Hybrid | SearchMode::Semantic) {
+        clauses.push("{targetHits:100}nearestNeighbor(embedding, query_embedding)".to_string());
+    }
+    if matches!(mode, SearchMode::Hybrid | SearchMode::Bm25) {
+        clauses.push(format!("content contains \"{}\"", escape_yql_string(query)));
+    }
+
+    let mut clause = if clauses.len() == 1 {
+        clauses[0].clone()
+    } else {
+        format!("({})", clauses.join(" or "))
+    };
+
     if let Some(repo_id) = repo_filter.and_then(|value| {
         let trimmed = value.trim();
         if trimmed.is_empty() {
