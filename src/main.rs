@@ -116,6 +116,7 @@ struct SummaryEntry {
     version: u32,
     created_at: i64,
     summary: String,
+    long_summary: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]
@@ -136,6 +137,7 @@ impl SummaryStore {
 #[derive(Debug, Serialize, Deserialize)]
 struct WikiResponse {
     summary: String,
+    long_summary: String,
     history: Vec<SummaryEntry>,
 }
 
@@ -602,18 +604,20 @@ async fn repo_wiki(
     if let Some(latest) = store.latest() {
         let mut history = store.entries.clone();
         history.reverse();
-        return Ok(Json(WikiResponse {
-            summary: latest.summary.clone(),
-            history,
-        }));
-    }
+            return Ok(Json(WikiResponse {
+                summary: latest.summary.clone(),
+                long_summary: latest.long_summary.clone(),
+                history,
+            }));
+        }
 
     let wiki_path = vv_path.join("wiki/index.md");
     let fallback = fs::read_to_string(wiki_path)
         .await
         .unwrap_or_else(|_| "# CodeWiki\n\nWiki content is not yet available.".to_string());
     Ok(Json(WikiResponse {
-        summary: fallback,
+        summary: fallback.clone(),
+        long_summary: fallback,
         history: Vec::new(),
     }))
 }
@@ -632,7 +636,15 @@ async fn update_repo_summary(
         .latest()
         .map(|entry| entry.summary.clone())
         .unwrap_or_else(|| "Summary not available.".into());
-    Ok(Json(WikiResponse { summary, history }))
+    let long_summary = store
+        .latest()
+        .map(|entry| entry.long_summary.clone())
+        .unwrap_or_else(|| "Summary not available.".into());
+    Ok(Json(WikiResponse {
+        summary,
+        long_summary,
+        history,
+    }))
 }
 
 async fn search(
@@ -647,11 +659,24 @@ async fn search(
     let search_mode = resolve_search_mode(payload.search_mode.as_deref());
     let yql = build_search_yql(payload.repo_filter.as_deref(), search_mode);
     let search_url = vespa_search_url(&state)?;
+    let has_repo_filter = payload
+        .repo_filter
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .is_some();
+    let hits = if has_repo_filter { 100 } else { 10 };
     let mut body = serde_json::json!({
         "yql": yql,
-        "hits": 10,
+        "hits": hits,
         "query": query,
     });
+
+    if matches!(search_mode, SearchMode::Hybrid | SearchMode::Bm25) {
+        if let Some(object) = body.as_object_mut() {
+            object.insert("defaultIndex".to_string(), "content".into());
+        }
+    }
 
     if let Some(profile) = search_mode.profile_name() {
         let query_embedding = VespaEmbedding {
@@ -1889,6 +1914,39 @@ async fn build_repo_summary_input(
         input.push('\n');
     }
 
+    let mut docs_files = files
+        .iter()
+        .filter(|path| {
+            let path_str = path.to_string_lossy().to_lowercase();
+            let is_doc_dir = path_str.starts_with("docs/")
+                || path_str.starts_with("doc/")
+                || path_str.contains("/docs/")
+                || path_str.contains("/doc/");
+            if !is_doc_dir {
+                return false;
+            }
+            matches!(
+                path.extension().and_then(|ext| ext.to_str()).unwrap_or(""),
+                "md" | "mdx" | "txt"
+            )
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    docs_files.sort();
+    if !docs_files.is_empty() {
+        input.push_str("\nDocs excerpts:\n");
+        for doc_path in docs_files.into_iter().take(3) {
+            let absolute = repo_path.join(&doc_path);
+            if let Ok(content) = fs::read_to_string(&absolute).await {
+                let cleaned = sanitize_vespa_content(&content);
+                let excerpt = truncate_for_summary(&cleaned, 1200);
+                input.push_str(&format!("\nFile: {}\n", doc_path.to_string_lossy()));
+                input.push_str(excerpt.as_ref());
+                input.push('\n');
+            }
+        }
+    }
+
     Ok(truncate_for_summary(&input, summary_limit).into_owned())
 }
 
@@ -1929,6 +1987,15 @@ fn parse_hf_summary(value: serde_json::Value) -> Result<String, AppError> {
 }
 
 async fn fetch_hf_summary(state: &AppState, text: &str) -> Result<String, AppError> {
+    fetch_hf_summary_with_params(state, text, 220, 80)
+}
+
+async fn fetch_hf_summary_with_params(
+    state: &AppState,
+    text: &str,
+    max_length: u32,
+    min_length: u32,
+) -> Result<String, AppError> {
     let base_url = state.huggingface_base_url.trim_end_matches('/');
     let url = format!(
         "{}/{}/pipeline/summarization",
@@ -1937,8 +2004,8 @@ async fn fetch_hf_summary(state: &AppState, text: &str) -> Result<String, AppErr
     let payload = serde_json::json!({
         "inputs": text,
         "parameters": {
-            "max_length": 220,
-            "min_length": 80,
+            "max_length": max_length,
+            "min_length": min_length,
             "do_sample": false,
             "truncation": true
         },
@@ -2016,14 +2083,25 @@ async fn generate_repo_summary(
     vv_path: &StdPath,
 ) -> Result<SummaryStore, AppError> {
     let input = build_repo_summary_input(state, record, repo_path).await?;
-    let summary = match fetch_hf_summary(state, input.as_ref()).await {
+    let summary = match fetch_hf_summary_with_params(state, input.as_ref(), 220, 80).await {
         Ok(summary) => summary,
         Err(AppError::HuggingFace(message))
             if message.contains("index out of range")
                 || message.contains("Bad Request") =>
         {
             let shorter = truncate_for_summary(input.as_ref(), 2000);
-            fetch_hf_summary(state, shorter.as_ref()).await?
+            fetch_hf_summary_with_params(state, shorter.as_ref(), 220, 80).await?
+        }
+        Err(err) => return Err(err),
+    };
+    let long_summary = match fetch_hf_summary_with_params(state, input.as_ref(), 420, 160).await {
+        Ok(summary) => summary,
+        Err(AppError::HuggingFace(message))
+            if message.contains("index out of range")
+                || message.contains("Bad Request") =>
+        {
+            let shorter = truncate_for_summary(input.as_ref(), 2000);
+            fetch_hf_summary_with_params(state, shorter.as_ref(), 420, 160).await?
         }
         Err(err) => return Err(err),
     };
@@ -2032,6 +2110,7 @@ async fn generate_repo_summary(
         version: store.next_version(),
         created_at: Utc::now().timestamp_millis(),
         summary: summary.clone(),
+        long_summary: long_summary.clone(),
     };
     store.entries.push(entry);
     write_summary_store(vv_path, &store).await?;

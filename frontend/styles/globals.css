@@ -31,6 +31,7 @@ body {
   font-family: var(--font-body);
   color: var(--text);
   background: var(--bg);
+  overflow-x: visible;
 }
 
 body::before {
@@ -50,6 +51,7 @@ a {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: visible;
 }
 
 .topbar {
@@ -109,6 +111,8 @@ a {
   display: flex;
   flex-direction: column;
   gap: 28px;
+  flex: 1;
+  overflow: visible;
 }
 
 
@@ -146,6 +150,7 @@ a {
   border-radius: 16px;
   padding: 0;
   box-shadow: none;
+  overflow: visible;
 }
 
 .panel-stack {
@@ -163,6 +168,7 @@ a {
   border: 1px solid var(--border);
   padding: 16px 18px;
   box-shadow: var(--shadow-soft);
+  overflow: visible;
 }
 
 .panel h2 {
@@ -206,7 +212,13 @@ a {
 
 .search-bar.inline {
   margin-bottom: 0;
-  width: min(100%, 560px);
+  width: 100%;
+  max-width: 100%;
+  justify-self: start;
+}
+
+.search-bar.inline input[type='text'] {
+  padding-left: 16px;
 }
 
 input[type='url'],
@@ -468,6 +480,7 @@ button:disabled {
   display: grid;
   grid-template-columns: minmax(240px, 0.35fr) minmax(0, 0.65fr);
   gap: 24px;
+  overflow: visible;
 }
 
 .split-layout > * {
@@ -506,6 +519,11 @@ button:disabled {
   color: var(--text);
 }
 
+.summary-text.long {
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .history-controls {
   display: flex;
   align-items: center;
@@ -533,6 +551,40 @@ button:disabled {
   display: grid;
   gap: 12px;
   min-width: 0;
+  overflow: visible;
+}
+
+.page-footer {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 20;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.search-header {
+  position: sticky;
+  top: 84px;
+  z-index: 5;
+  padding: 12px 16px 12px 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.search-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  overflow: visible;
+  width: 100%;
+}
+
+.search-header .mode-toggle {
+  margin-left: 8px;
 }
 
 .search-panel-body {
@@ -631,7 +683,7 @@ button:disabled {
 
 
   .search-bar.inline {
-    width: 100%;
+    width: 200%;
   }
 }
 
@@ -651,6 +703,11 @@ button:disabled {
 
   .search-bar {
     grid-template-columns: 1fr;
+  }
+
+  .search-controls {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .form.inline-form {

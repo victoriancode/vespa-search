@@ -9,6 +9,7 @@ export default function RepoWiki() {
   const router = useRouter();
   const { id } = router.query;
   const [summary, setSummary] = useState('');
+  const [longSummary, setLongSummary] = useState('');
   const [summaryHistory, setSummaryHistory] = useState([]);
   const [summaryIndex, setSummaryIndex] = useState(0);
   const [summaryLoading, setSummaryLoading] = useState(false);
@@ -17,7 +18,7 @@ export default function RepoWiki() {
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
-  const [searchMode, setSearchMode] = useState('bm25');
+  const [searchMode, setSearchMode] = useState('semantic');
 
   useEffect(() => {
     if (!id) return;
@@ -25,11 +26,13 @@ export default function RepoWiki() {
       .then((res) => res.json())
       .then((data) => {
         setSummary(data.summary || '');
+        setLongSummary(data.long_summary || '');
         setSummaryHistory(Array.isArray(data.history) ? data.history : []);
         setSummaryIndex(0);
       })
       .catch(() => {
         setSummary('Unable to load CodeWiki summary.');
+        setLongSummary('');
         setSummaryHistory([]);
       });
   }, [id]);
@@ -74,6 +77,7 @@ export default function RepoWiki() {
         throw new Error(data.error || 'Summary update failed');
       }
       setSummary(data.summary || '');
+      setLongSummary(data.long_summary || '');
       setSummaryHistory(Array.isArray(data.history) ? data.history : []);
       setSummaryIndex(0);
     } catch (err) {
@@ -150,6 +154,11 @@ export default function RepoWiki() {
               <div className="summary-text">
                 {activeHistory?.summary || summary || 'Summary not available yet.'}
               </div>
+              {(activeHistory?.long_summary || longSummary) && (
+                <div className="summary-text long">
+                  {activeHistory?.long_summary || longSummary}
+                </div>
+              )}
               {activeHistory && (
                 <span className="subtle">
                   Generated {new Date(activeHistory.created_at).toLocaleString()}
@@ -169,32 +178,34 @@ export default function RepoWiki() {
 
           <section className="panel search-panel">
             <div className="panel-header search-header">
-              <form onSubmit={handleSearch} className="search-bar inline">
-                <input
-                  type="text"
-                  placeholder="Search for functions, files, or concepts"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                />
-                <button type="submit" disabled={searching || !query.trim()}>
-                  {searching ? 'Searching...' : 'Search'}
-                </button>
-              </form>
-              <div className="mode-toggle">
-                <button
-                  className={`pill ${searchMode === 'bm25' ? 'active' : 'ghost'}`}
-                  type="button"
-                  onClick={() => setSearchMode('bm25')}
-                >
-                  Fast
-                </button>
-                <button
-                  className={`pill ${searchMode === 'semantic' ? 'active' : 'ghost'}`}
-                  type="button"
-                  onClick={() => setSearchMode('semantic')}
-                >
-                  Deep
-                </button>
+              <div className="search-controls">
+                <div className="mode-toggle">
+                  <button
+                    className={`pill ${searchMode === 'bm25' ? 'active' : 'ghost'}`}
+                    type="button"
+                    onClick={() => setSearchMode('bm25')}
+                  >
+                    Fast
+                  </button>
+                  <button
+                    className={`pill ${searchMode === 'semantic' ? 'active' : 'ghost'}`}
+                    type="button"
+                    onClick={() => setSearchMode('semantic')}
+                  >
+                    Deep
+                  </button>
+                </div>
+                <form onSubmit={handleSearch} className="search-bar inline">
+                  <input
+                    type="text"
+                    placeholder="Search for functions, files, or concepts"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                  />
+                  <button type="submit" disabled={searching || !query.trim()}>
+                    {searching ? 'Searching...' : 'Search'}
+                  </button>
+                </form>
               </div>
             </div>
             <div className="search-panel-body">
@@ -228,6 +239,17 @@ export default function RepoWiki() {
           </section>
         </section>
 
+        {results.length > 0 && (
+          <footer className="page-footer">
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
+              Return to top
+            </button>
+          </footer>
+        )}
       </main>
     </div>
   );
