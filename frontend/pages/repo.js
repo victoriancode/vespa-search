@@ -65,7 +65,7 @@ export default function RepoWiki() {
         </div>
       </header>
 
-      <main className="content">
+      <main className="content floating-search">
         <section className="repo-hero">
           <div>
             <h1>CodeWiki workspace</h1>
