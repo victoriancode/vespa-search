@@ -645,12 +645,24 @@ async fn search(
     }
 
     let search_mode = resolve_search_mode(payload.search_mode.as_deref());
-    let yql = build_search_yql(query, payload.repo_filter.as_deref(), search_mode);
+    let yql = build_search_yql(payload.repo_filter.as_deref(), search_mode);
     let search_url = vespa_search_url(&state)?;
     let mut body = serde_json::json!({
         "yql": yql,
         "hits": 10,
+        "query": query,
     });
+
+    if let Some(repo_id) = payload
+        .repo_filter
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        if let Some(object) = body.as_object_mut() {
+            object.insert("repo_id".to_string(), repo_id.into());
+        }
+    }
 
     if let Some(profile) = search_mode.profile_name() {
         let query_embedding = VespaEmbedding {
@@ -2029,13 +2041,13 @@ async fn generate_repo_summary(
     Ok(store)
 }
 
-fn build_search_yql(query: &str, repo_filter: Option<&str>, mode: SearchMode) -> String {
+fn build_search_yql(repo_filter: Option<&str>, mode: SearchMode) -> String {
     let mut clauses = Vec::new();
     if matches!(mode, SearchMode::Hybrid | SearchMode::Semantic) {
         clauses.push("{targetHits:100}nearestNeighbor(embedding, query_embedding)".to_string());
     }
     if matches!(mode, SearchMode::Hybrid | SearchMode::Bm25) {
-        clauses.push(format!("userInput(\"{}\")", escape_yql_string(query)));
+        clauses.push("userInput(@query)".to_string());
     }
 
     let mut clause = if clauses.len() == 1 {
@@ -2044,26 +2056,23 @@ fn build_search_yql(query: &str, repo_filter: Option<&str>, mode: SearchMode) ->
         format!("({})", clauses.join(" or "))
     };
 
-    if let Some(repo_id) = repo_filter.and_then(|value| {
-        let trimmed = value.trim();
-        if trimmed.is_empty() {
-            None
-        } else {
-            Some(trimmed)
-        }
-    }) {
-        clause.push_str(" and repo_id = \"");
-        clause.push_str(&escape_yql_string(repo_id));
-        clause.push('"');
+    if repo_filter
+        .and_then(|value| {
+            let trimmed = value.trim();
+            if trimmed.is_empty() {
+                None
+            } else {
+                Some(trimmed)
+            }
+        })
+        .is_some()
+    {
+        clause.push_str(" and repo_id = @repo_id");
     }
     format!(
         "select repo_id, file_path, line_start, line_end, content from sources * where {};",
         clause
     )
-}
-
-fn escape_yql_string(value: &str) -> String {
-    value.replace('\\', "\\\\").replace('\"', "\\\"")
 }
 
 fn build_snippet(content: &str) -> String {
