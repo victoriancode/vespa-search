@@ -660,7 +660,8 @@ async fn search(
         .filter(|value| !value.is_empty())
     {
         if let Some(object) = body.as_object_mut() {
-            object.insert("repo_id".to_string(), repo_id.into());
+            let quoted = format!("\"{}\"", escape_yql_string(repo_id));
+            object.insert("repo_id".to_string(), quoted.into());
         }
     }
 
@@ -2073,6 +2074,10 @@ fn build_search_yql(repo_filter: Option<&str>, mode: SearchMode) -> String {
         "select repo_id, file_path, line_start, line_end, content from sources * where {};",
         clause
     )
+}
+
+fn escape_yql_string(value: &str) -> String {
+    value.replace('\\', "\\\\").replace('\"', "\\\"")
 }
 
 fn build_snippet(content: &str) -> String {
