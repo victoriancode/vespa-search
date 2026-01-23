@@ -442,6 +442,16 @@ button:disabled {
   overflow: hidden;
 }
 
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-action {
+  white-space: nowrap;
+}
+
 .progress-bar {
   height: 100%;
   background: linear-gradient(90deg, #155eef, #12b981);
@@ -542,9 +552,31 @@ button:disabled {
   color: #0f172a;
 }
 
+.icon-button svg {
+  width: 20px;
+  height: 20px;
+}
+
 .icon-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.redo-action {
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #0f172a;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.redo-action svg {
+  width: 18px;
+  height: 18px;
 }
 
 .search-panel {

@@ -193,20 +193,44 @@ export default function Home() {
               <h2>Ingestion Progress</h2>
               <span className="subtle">Queue status</span>
             </div>
-            <div className="progress">
-              <div
-                className={`progress-bar ${status?.status === 'complete' ? 'complete' : ''}`}
-                style={{
-                  width: `${progressValue}%`
-                }}
-              />
+            <div className="progress-row">
+              <div className="progress">
+                <div
+                  className={`progress-bar ${status?.status === 'complete' ? 'complete' : ''}`}
+                  style={{
+                    width: `${progressValue}%`
+                  }}
+                />
+              </div>
+              {status?.status === 'complete' && selected && (
+                <button
+                  className="progress-action redo-action"
+                  onClick={handleIngest}
+                  aria-label="Redo ingestion"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    role="img"
+                    aria-hidden="true"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="3 4 3 10 9 10" />
+                    <path d="M4.5 15a8 8 0 1 0 2.2-8.7L3 10" />
+                  </svg>
+                  <span>Redo ingestion</span>
+                </button>
+              )}
             </div>
             <p className="status">
               {status?.message || 'Select a repo to check status.'} ({progressLabel})
             </p>
             <div className="actions">
-              <button onClick={handleIngest} disabled={!selected}>
-                Start ingestion
+              <button onClick={handleIngest} disabled={!selected || status?.status === 'complete'}>
+                {status?.status === 'complete' ? 'Ingested' : 'Start ingestion'}
               </button>
               {status?.status === 'complete' && selected && (
                 <Link
