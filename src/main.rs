@@ -1549,7 +1549,9 @@ async fn fetch_hf_embedding(state: &AppState, text: &str) -> Result<Vec<f32>, Ap
         request = request.bearer_auth(token);
     }
 
-    let response = request.send().await?;
+    let response = request.send().await.map_err(|err| {
+        AppError::HuggingFace(format!("embedding request failed to send: {err}"))
+    })?;
     if !response.status().is_success() {
         let status = response.status();
         let body = response.text().await.unwrap_or_default();
