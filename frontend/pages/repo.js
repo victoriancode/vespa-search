@@ -18,7 +18,7 @@ export default function RepoWiki() {
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
-  const [searchMode, setSearchMode] = useState('semantic');
+  const [searchMode, setSearchMode] = useState('hybrid');
 
   useEffect(() => {
     if (!id) return;
@@ -186,6 +186,13 @@ export default function RepoWiki() {
                     onClick={() => setSearchMode('bm25')}
                   >
                     Fast
+                  </button>
+                  <button
+                    className={`pill ${searchMode === 'hybrid' ? 'active' : 'ghost'}`}
+                    type="button"
+                    onClick={() => setSearchMode('hybrid')}
+                  >
+                    Hybrid
                   </button>
                   <button
                     className={`pill ${searchMode === 'semantic' ? 'active' : 'ghost'}`}
