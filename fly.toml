@@ -11,6 +11,7 @@ primary_region = 'iad'
 [env]
   GITHUB_ORG = 'victoriancode'
   VESPA_CLUSTER = 'codesearch'
+  PORT = '3001'
 
 [http_service]
   internal_port = 3001
