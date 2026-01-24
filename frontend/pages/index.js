@@ -12,6 +12,7 @@ export default function Home() {
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showProgress, setShowProgress] = useState(false);
   const progressMap = {
     in_progress: 45,
     mirroring: 30,
@@ -143,8 +144,15 @@ export default function Home() {
         <section className="panel-grid">
           <section className="panel boxed">
             <div className="panel-header">
-              <h2>Repositories</h2>
-              <span className="subtle">Select one to see status</span>
+              <div>
+                <h2>Repositories</h2>
+                <span className="subtle">Select one to see status</span>
+              </div>
+              <div className="panel-actions">
+                <button type="button" className="button-compact" onClick={() => setShowProgress(true)}>
+                  Ingestion progress
+                </button>
+              </div>
             </div>
             <div className="repo-add">
               <h3>Add Repo</h3>
@@ -187,11 +195,26 @@ export default function Home() {
             </div>
           </section>
 
-          <section className="panel-stack">
-            <section className="panel">
-            <div className="panel-header">
-              <h2>Ingestion Progress</h2>
-              <span className="subtle">Queue status</span>
+        </section>
+
+      </main>
+
+      {showProgress && (
+        <div className="modal-backdrop" onClick={() => setShowProgress(false)}>
+          <div className="modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <h2>Ingestion Progress</h2>
+                <span className="subtle">Queue status</span>
+              </div>
+              <button
+                type="button"
+                className="icon-button"
+                aria-label="Close"
+                onClick={() => setShowProgress(false)}
+              >
+                ×
+              </button>
             </div>
             <div className="progress-row">
               <div className="progress">
@@ -241,11 +264,9 @@ export default function Home() {
                 </Link>
               )}
             </div>
-            </section>
-          </section>
-        </section>
-
-      </main>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
