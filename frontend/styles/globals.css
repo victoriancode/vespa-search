@@ -750,4 +750,17 @@ button:disabled {
     flex-direction: column;
     align-items: stretch;
   }
+
+  .panel-grid {
+    justify-items: center;
+  }
+
+  .repo-grid {
+    justify-content: center;
+    justify-items: center;
+  }
+
+  .repo-icon {
+    margin: 0 auto;
+  }
 }

@@ -567,7 +567,16 @@ async fn repo_status(
         .join(&record.owner)
         .join(&record.name)
         .join("vv");
-    read_status(&vv_path).await
+    let mut status = read_status(&vv_path).await?;
+    if status.status == "unknown" {
+        if repo_indexed_in_vespa(&state, &record.id).await.unwrap_or(false) {
+            status = StatusResponse {
+                status: "complete".into(),
+                message: Some("Ingestion complete (status inferred from Vespa).".into()),
+            };
+        }
+    }
+    Ok(Json(status))
 }
 
 async fn repo_events(
@@ -968,36 +977,36 @@ async fn write_status(
     Ok(())
 }
 
-async fn read_status(vv_path: &StdPath) -> Result<Json<StatusResponse>, AppError> {
+async fn read_status(vv_path: &StdPath) -> Result<StatusResponse, AppError> {
     let path = vv_path.join("status.json");
     if fs::metadata(&path).await.is_err() {
         let chunks_path = vv_path.join("chunks.jsonl");
         if let Ok(metadata) = fs::metadata(&chunks_path).await {
             if metadata.len() > 0 {
-                return Ok(Json(StatusResponse {
+                return Ok(StatusResponse {
                     status: "complete".into(),
                     message: Some("Ingestion complete (status recovered).".into()),
-                }));
+                });
             }
         }
 
         let wiki_path = vv_path.join("wiki/index.md");
         if fs::metadata(&wiki_path).await.is_ok() {
-            return Ok(Json(StatusResponse {
+            return Ok(StatusResponse {
                 status: "unknown".into(),
                 message: Some(
                     "Ingestion artifacts found, but status is unavailable. Re-run ingestion to refresh."
                         .into(),
                 ),
-            }));
+            });
         }
 
-        return Ok(Json(StatusResponse {
+        return Ok(StatusResponse {
             status: "unknown".into(),
             message: Some(
                 "Status not available on this instance. Re-run ingestion if needed.".into(),
             ),
-        }));
+        });
     }
 
     let data = fs::read(path).await?;
@@ -1010,7 +1019,7 @@ async fn read_status(vv_path: &StdPath) -> Result<Json<StatusResponse>, AppError
             _ => "Status unavailable. Re-run ingestion if needed.".into(),
         });
     }
-    Ok(Json(status))
+    Ok(status)
 }
 
 async fn read_summary_store(vv_path: &StdPath) -> Result<SummaryStore, AppError> {
@@ -1562,6 +1571,33 @@ fn vespa_search_url(state: &AppState) -> Result<String, AppError> {
         "{}/search/",
         state.vespa_endpoint.trim_end_matches('/')
     ))
+}
+
+async fn repo_indexed_in_vespa(state: &AppState, repo_id: &str) -> Result<bool, AppError> {
+    if state.vespa_endpoint.trim().is_empty() {
+        return Ok(false);
+    }
+    let search_url = vespa_search_url(state)?;
+    let escaped = repo_id.replace('"', "");
+    let yql = format!(
+        "select repo_id from sources * where repo_id = \"{}\";",
+        escaped
+    );
+    let body = serde_json::json!({
+        "yql": yql,
+        "hits": 0
+    });
+    let response = state.http_client.post(search_url).json(&body).send().await?;
+    if !response.status().is_success() {
+        let body = response.text().await.unwrap_or_default();
+        return Err(AppError::VespaRejected(body));
+    }
+    let body: serde_json::Value = response.json().await?;
+    let total = body
+        .pointer("/root/fields/totalCount")
+        .and_then(|value| value.as_i64())
+        .unwrap_or(0);
+    Ok(total > 0)
 }
 
 fn sha256_hex(data: &[u8]) -> String {
