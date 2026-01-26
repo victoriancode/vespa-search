@@ -40,6 +40,8 @@ const HF_DEFAULT_BACKOFF_MAX_MS: u64 = 8000;
 const HF_DEFAULT_SUMMARY_MODEL: &str = "sshleifer/distilbart-cnn-12-6";
 const HF_DEFAULT_SUMMARY_MAX_CHARS: usize = 3200;
 const HF_DEFAULT_SUMMARY_TOP_FILES: usize = 60;
+const SUMMARY_PROVIDER_HF: &str = "huggingface";
+const SUMMARY_PROVIDER_COLAB: &str = "colab";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct RepoRecord {
@@ -192,6 +194,10 @@ struct AppState {
     huggingface_summary_model: String,
     huggingface_summary_max_chars: usize,
     huggingface_summary_top_files: usize,
+    summary_provider: SummaryProvider,
+    colab_summary_url: Option<String>,
+    colab_summary_token: Option<String>,
+    colab_summary_auth_header: String,
     vespa_endpoint: String,
     vespa_document_endpoint: String,
     vespa_cluster: String,
@@ -412,6 +418,12 @@ async fn main() -> Result<(), AppError> {
         .ok()
         .and_then(|value| value.parse::<usize>().ok())
         .unwrap_or(HF_DEFAULT_SUMMARY_TOP_FILES);
+    let summary_provider =
+        resolve_summary_provider(std::env::var("SUMMARY_PROVIDER").ok().as_deref());
+    let colab_summary_url = std::env::var("COLAB_SUMMARY_URL").ok();
+    let colab_summary_token = std::env::var("COLAB_SUMMARY_TOKEN").ok();
+    let colab_summary_auth_header = std::env::var("COLAB_SUMMARY_AUTH_HEADER")
+        .unwrap_or_else(|_| "Authorization".into());
 
     fs::create_dir_all(registry_path.parent().unwrap()).await?;
     fs::create_dir_all(&repos_path).await?;
@@ -436,6 +448,10 @@ async fn main() -> Result<(), AppError> {
         huggingface_summary_model,
         huggingface_summary_max_chars,
         huggingface_summary_top_files,
+        summary_provider,
+        colab_summary_url,
+        colab_summary_token,
+        colab_summary_auth_header,
         vespa_endpoint,
         vespa_document_endpoint,
         vespa_cluster,
@@ -1623,6 +1639,12 @@ enum SearchMode {
     Bm25,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SummaryProvider {
+    HuggingFace,
+    Colab,
+}
+
 impl SearchMode {
     fn profile_name(self) -> Option<&'static str> {
         match self {
@@ -1639,6 +1661,15 @@ fn resolve_search_mode(value: Option<&str>) -> SearchMode {
         "semantic" => SearchMode::Semantic,
         "bm25" => SearchMode::Bm25,
         _ => SearchMode::Hybrid,
+    }
+}
+
+fn resolve_summary_provider(value: Option<&str>) -> SummaryProvider {
+    let mode = value.unwrap_or(SUMMARY_PROVIDER_HF).trim().to_lowercase();
+    match mode.as_str() {
+        "hf" | "huggingface" => SummaryProvider::HuggingFace,
+        "colab" | "google" | "google-colab" => SummaryProvider::Colab,
+        _ => SummaryProvider::HuggingFace,
     }
 }
 
@@ -1964,31 +1995,50 @@ async fn build_repo_summary_input(
     Ok(truncate_for_summary(&input, summary_limit).into_owned())
 }
 
-fn parse_hf_summary(value: serde_json::Value) -> Result<String, AppError> {
+fn extract_summary_text(value: &serde_json::Value) -> Option<String> {
+    value
+        .get("summary_text")
+        .and_then(|value| value.as_str())
+        .map(|text| text.to_string())
+        .or_else(|| {
+            value
+                .get("summary")
+                .and_then(|value| value.as_str())
+                .map(|text| text.to_string())
+        })
+        .or_else(|| {
+            value
+                .get("generated_text")
+                .and_then(|value| value.as_str())
+                .map(|text| text.to_string())
+        })
+        .or_else(|| {
+            value
+                .get("text")
+                .and_then(|value| value.as_str())
+                .map(|text| text.to_string())
+        })
+}
+
+fn parse_summary_response(value: serde_json::Value) -> Result<String, AppError> {
     match value {
         serde_json::Value::Array(values) => {
             let first = values.get(0).ok_or_else(|| {
                 AppError::HuggingFace("empty summary response".into())
             })?;
-            if let Some(summary) = first
-                .get("summary_text")
-                .and_then(|value| value.as_str())
-            {
-                return Ok(summary.to_string());
+            if let Some(summary) = extract_summary_text(first) {
+                return Ok(summary);
             }
             Err(AppError::HuggingFace(
-                "missing summary_text in response".into(),
+                "missing summary text in response".into(),
             ))
         }
         serde_json::Value::Object(map) => {
             if let Some(error) = map.get("error").and_then(|value| value.as_str()) {
                 return Err(AppError::HuggingFace(error.to_string()));
             }
-            if let Some(summary) = map
-                .get("summary_text")
-                .and_then(|value| value.as_str())
-            {
-                return Ok(summary.to_string());
+            if let Some(summary) = extract_summary_text(&serde_json::Value::Object(map.clone())) {
+                return Ok(summary);
             }
             Err(AppError::HuggingFace(
                 "unexpected summary response".into(),
@@ -2043,7 +2093,7 @@ async fn fetch_hf_summary_with_params(
                         .json()
                         .await
                         .map_err(|err| AppError::HuggingFace(err.to_string()))?;
-                    return parse_hf_summary(value);
+                    return parse_summary_response(value);
                 }
 
                 let status = response.status();
@@ -2090,6 +2140,105 @@ async fn fetch_hf_summary_with_params(
     ))
 }
 
+async fn fetch_colab_summary_with_params(
+    state: &AppState,
+    text: &str,
+    max_length: u32,
+    min_length: u32,
+) -> Result<String, AppError> {
+    let url = state.colab_summary_url.as_deref().ok_or_else(|| {
+        AppError::Config("COLAB_SUMMARY_URL must be set for SUMMARY_PROVIDER=colab".into())
+    })?;
+    let payload = serde_json::json!({
+        "inputs": text,
+        "parameters": {
+            "max_length": max_length,
+            "min_length": min_length,
+            "do_sample": false,
+            "truncation": true
+        }
+    });
+
+    let max_retries = state.huggingface_max_retries;
+    let mut backoff = Duration::from_millis(state.huggingface_backoff_ms);
+    let backoff_max = Duration::from_millis(state.huggingface_backoff_max_ms);
+
+    for attempt in 0..=max_retries {
+        let mut request = state.hf_client.post(url).json(&payload);
+        if let Some(token) = state.colab_summary_token.as_deref() {
+            request = request.header(state.colab_summary_auth_header.as_str(), token);
+        }
+
+        match request.send().await {
+            Ok(response) => {
+                if response.status().is_success() {
+                    let value: serde_json::Value = response
+                        .json()
+                        .await
+                        .map_err(|err| AppError::HuggingFace(err.to_string()))?;
+                    return parse_summary_response(value);
+                }
+
+                let status = response.status();
+                let body = response.text().await.unwrap_or_default();
+                if attempt < max_retries && should_retry_status(status) {
+                    warn!(
+                        "colab summary request failed with {status}; retrying in {:?} (attempt {}/{})",
+                        backoff,
+                        attempt + 1,
+                        max_retries
+                    );
+                    tokio::time::sleep(backoff).await;
+                    backoff = (backoff * 2).min(backoff_max);
+                    continue;
+                }
+
+                return Err(AppError::HuggingFace(format!(
+                    "colab summary request failed: {status} {body}"
+                )));
+            }
+            Err(err) => {
+                let detail = format_reqwest_error(&err);
+                if attempt < max_retries {
+                    warn!(
+                        "colab summary request failed to send: {detail}; retrying in {:?} (attempt {}/{})",
+                        backoff,
+                        attempt + 1,
+                        max_retries
+                    );
+                    tokio::time::sleep(backoff).await;
+                    backoff = (backoff * 2).min(backoff_max);
+                    continue;
+                }
+
+                return Err(AppError::HuggingFace(format!(
+                    "colab summary request failed to send: {detail}"
+                )));
+            }
+        }
+    }
+
+    Err(AppError::HuggingFace(
+        "colab summary request exhausted retries".into(),
+    ))
+}
+
+async fn fetch_summary_with_params(
+    state: &AppState,
+    text: &str,
+    max_length: u32,
+    min_length: u32,
+) -> Result<String, AppError> {
+    match state.summary_provider {
+        SummaryProvider::HuggingFace => {
+            fetch_hf_summary_with_params(state, text, max_length, min_length).await
+        }
+        SummaryProvider::Colab => {
+            fetch_colab_summary_with_params(state, text, max_length, min_length).await
+        }
+    }
+}
+
 async fn generate_repo_summary(
     state: &AppState,
     record: &RepoRecord,
@@ -2097,25 +2246,25 @@ async fn generate_repo_summary(
     vv_path: &StdPath,
 ) -> Result<SummaryStore, AppError> {
     let input = build_repo_summary_input(state, record, repo_path).await?;
-    let summary = match fetch_hf_summary_with_params(state, input.as_ref(), 160, 40).await {
+    let summary = match fetch_summary_with_params(state, input.as_ref(), 160, 40).await {
         Ok(summary) => summary,
         Err(AppError::HuggingFace(message))
             if message.contains("index out of range")
                 || message.contains("Bad Request") =>
         {
             let shorter = truncate_for_summary(input.as_ref(), 1600);
-            fetch_hf_summary_with_params(state, shorter.as_ref(), 160, 40).await?
+            fetch_summary_with_params(state, shorter.as_ref(), 160, 40).await?
         }
         Err(err) => return Err(err),
     };
-    let long_summary = match fetch_hf_summary_with_params(state, input.as_ref(), 280, 90).await {
+    let long_summary = match fetch_summary_with_params(state, input.as_ref(), 280, 90).await {
         Ok(summary) => summary,
         Err(AppError::HuggingFace(message))
             if message.contains("index out of range")
                 || message.contains("Bad Request") =>
         {
             let shorter = truncate_for_summary(input.as_ref(), 1600);
-            fetch_hf_summary_with_params(state, shorter.as_ref(), 280, 90).await?
+            fetch_summary_with_params(state, shorter.as_ref(), 280, 90).await?
         }
         Err(err) => return Err(err),
     };
