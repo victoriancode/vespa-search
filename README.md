@@ -81,6 +81,9 @@ Set these GitHub secrets:
 - `CLOUDFLARE_ACCOUNT_ID`
 - `CLOUDFLARE_API_TOKEN`
 
+The same account ID is also pinned in `wrangler.jsonc` and `wrangler.worker.jsonc`. If you deploy to a different
+Cloudflare account, update both config files or override with `CLOUDFLARE_ACCOUNT_ID`.
+
 The API token should be scoped to the target account and include these account permissions:
 
 - `Cloudflare Pages:Edit`
