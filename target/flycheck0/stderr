@@ -1,33 +1,4 @@
 warning: `/Users/chrismaxwell/.cargo/config` is deprecated in favor of `config.toml`
-note: if you need to support cargo 1.38 or earlier, you can symlink `config` to `config.toml`
-warning: `/Users/chrismaxwell/.cargo/config` is deprecated in favor of `config.toml`
-note: if you need to support cargo 1.38 or earlier, you can symlink `config` to `config.toml`
-error: rustc 1.79.0 is not supported by the following packages:
-  icu_collections@2.1.1 requires rustc 1.83
-  icu_locale_core@2.1.1 requires rustc 1.83
-  icu_normalizer@2.1.1 requires rustc 1.83
-  icu_normalizer_data@2.1.1 requires rustc 1.83
-  icu_normalizer_data@2.1.1 requires rustc 1.83
-  icu_normalizer_data@2.1.1 requires rustc 1.83
-  icu_properties@2.1.2 requires rustc 1.83
-  icu_properties_data@2.1.2 requires rustc 1.83
-  icu_properties_data@2.1.2 requires rustc 1.83
-  icu_properties_data@2.1.2 requires rustc 1.83
-  icu_provider@2.1.1 requires rustc 1.83
-  idna_adapter@1.2.1 requires rustc 1.82
-  indexmap@2.13.0 requires rustc 1.82
-  litemap@0.8.1 requires rustc 1.82
-  native-tls@0.2.14 requires rustc 1.80.0
-  native-tls@0.2.14 requires rustc 1.80.0
-  native-tls@0.2.14 requires rustc 1.80.0
-  potential_utf@0.1.4 requires rustc 1.82
-  tinystr@0.8.2 requires rustc 1.82
-  writeable@0.6.2 requires rustc 1.82
-  yoke@0.8.1 requires rustc 1.82
-  zerofrom@0.1.6 requires rustc 1.81
-  zerotrie@0.2.3 requires rustc 1.82
-  zerovec@0.11.5 requires rustc 1.82
-Either upgrade rustc or select compatible dependency versions with
-`cargo update <name>@<current-ver> --precise <compatible-ver>`
-where `<compatible-ver>` is the latest version supporting rustc 1.79.0
-
+  |
+  = help: if you need to support cargo 1.38 or earlier, you can symlink `config` to `config.toml`
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.25s

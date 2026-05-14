@@ -1,7 +1,8 @@
-# Vespa Code Search + CodeWiki (Rust + NextJS)
+# Cloudflare Code Search + CodeWiki (Workers + NextJS)
 
-This repository documents a plan for building a Vespa-backed code search engine with Rust-based
-services, a NextJS frontend, and an MCP-powered CodeWiki generated during ingestion.
+This repository now includes a Cloudflare-native code search backend alongside the original Rust/Vespa prototype.
+The Cloudflare path uses Workers, D1, Workers AI embeddings, and Vectorize to provide vector-based hybrid search
+for public GitHub repositories while preserving the existing frontend API contract.
 
 ## Contents
 - `PLAN.md`: end-to-end architecture, workflow, schema, and UI requirements.
@@ -12,12 +13,25 @@ services, a NextJS frontend, and an MCP-powered CodeWiki generated during ingest
 - `docs/DETAILED_DESIGN.md`: detailed ingestion/search workflows and tuning guidance.
 
 ## Highlights
-- Accepts any public GitHub URL and clones it under `repos/<owner>/<name>`.
-- Generates a CodeWiki using the MCP DeepWiki connector before enabling search.
-- Stores vectors and repo metadata in a `vv/` folder inside each repo.
+- Accepts any public GitHub URL.
+- Ingests source files through the GitHub API, which is compatible with Cloudflare Workers.
+- Stores repository, status, chunk, and CodeWiki metadata in Cloudflare D1.
+- Generates 768-dimensional embeddings with Workers AI (`@cf/baai/bge-base-en-v1.5`).
+- Stores vectors and searchable metadata in Cloudflare Vectorize.
+- Serves `bm25`, `semantic`, and `hybrid` search modes from the same `/search` endpoint used by the UI.
 
 ## Local development
-### Backend (Rust)
+### Backend (Cloudflare Worker)
+Requires Node.js 22+ for current Wrangler.
+
+```bash
+npm install
+npm run cf:dev
+```
+
+The local Worker API defaults to `http://localhost:8787`.
+
+### Backend (legacy Rust/Vespa prototype)
 ```bash
 cargo run
 ```
@@ -29,26 +43,54 @@ npm install
 npm run dev
 ```
 
-The frontend reads the backend base URL from `NEXT_PUBLIC_API_BASE` (defaults to `http://localhost:3001`).
+The frontend reads the backend base URL from `NEXT_PUBLIC_API_BASE` (defaults to `http://localhost:8787`).
 
-## Backend API (starter)
+## Backend API
 - `POST /repos` → register a repo URL.
-- `POST /repos/{id}/index` → clone, generate `vv/` artifacts, and mark ingestion complete.
+- `POST /repos/{id}/index` → fetch, chunk, embed, and index repository files on Cloudflare.
 - `GET /repos/{id}/status` → ingestion status for progress UI.
-- `GET /repos/{id}/wiki` → CodeWiki markdown content.
-- `POST /search` → placeholder search endpoint (returns empty results for now).
+- `GET /repos/{id}/wiki` → CodeWiki summary content.
+- `POST /search` → vector, keyword, or hybrid search depending on `search_mode`.
 
-## Deployment (GitHub Actions)
-This repo includes a GitHub Actions workflow to deploy the Rust backend to Fly.io (free-tier friendly).
-
-1. Create a Fly.io app (example: `fly apps create vespa-code-search`).
-2. Add the Fly.io API token as a GitHub secret named `FLY_API_TOKEN`.
-3. Update the `FLY_APP_NAME` value in `.github/workflows/deploy-backend.yml`.
-
-The workflow will build and deploy the backend on pushes to `main`.
-
-If you deploy manually with `flyctl`, run from the repo root:
+## Cloudflare Resources
+Create the Cloudflare resources once before deploying. The Workers AI model outputs 768 dimensions, so the
+Vectorize index must match that dimension.
 
 ```bash
-flyctl deploy --config fly.toml --remote-only
+npx wrangler vectorize create vespa-search-code --dimensions=768 --metric=cosine
+npx wrangler vectorize create-metadata-index vespa-search-code --propertyName=repo_id --type=string
+npx wrangler d1 create vespa-search-db
+```
+
+Copy the D1 `database_id` into `wrangler.jsonc`, replacing `REPLACE_WITH_D1_DATABASE_ID`.
+
+Optional for higher GitHub API limits:
+
+```bash
+npx wrangler secret put GITHUB_TOKEN
+```
+
+## Deployment
+GitHub Actions are configured for Cloudflare:
+
+- `.github/workflows/deploy-backend.yml` applies D1 migrations and deploys the Worker.
+- `.github/workflows/deploy-frontend.yml` builds the static NextJS export and deploys it to Cloudflare Pages.
+
+Set these GitHub secrets:
+
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_API_TOKEN`
+
+Set this GitHub Actions variable for the frontend:
+
+- `NEXT_PUBLIC_API_BASE`, for example `https://vespa-search-api.<your-subdomain>.workers.dev`
+
+Manual deploy:
+
+```bash
+npm run cf:d1:migrate
+npm run cf:deploy
+npm --prefix frontend install
+NEXT_PUBLIC_API_BASE=https://vespa-search-api.<your-subdomain>.workers.dev npm --prefix frontend run build
+npm run cf:pages:deploy
 ```

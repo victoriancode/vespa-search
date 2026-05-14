@@ -1,11 +1,14 @@
-name: Deploy Backend
+name: Deploy Cloudflare Worker
 
 on:
   push:
     branches: ["main"]
-
-env:
-  FLY_APP_NAME: "vespa-search"
+    paths:
+      - 'cloudflare/**'
+      - 'wrangler.jsonc'
+      - 'package.json'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -14,27 +17,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Flyctl
-        uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
 
-      # Optional but very helpful for debugging path issues
-      - name: Debug paths
-        run: |
-          echo "Repo root:"
-          ls -la
-          echo ""
-          test -f Dockerfile && echo "✅ Found Dockerfile" || (echo "❌ Missing Dockerfile" && exit 1)
-          test -f fly.toml && echo "✅ Found fly.toml" || (echo "❌ Missing fly.toml" && exit 1)
+      - name: Install dependencies
+        run: npm install
 
-      - name: Deploy to Fly.io
+      - name: Apply D1 migrations
         env:
-          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
-        run: |
-          flyctl deploy \
-            --config fly.toml \
-            --dockerfile Dockerfile \
-            --app "${FLY_APP_NAME}" \
-            --build-arg VESPA_CLIENT_CERT="${{ secrets.VESPA_CLIENT_CERT }}" \
-            --build-arg VESPA_CLIENT_KEY="${{ secrets.VESPA_CLIENT_KEY }}" \
-            --build-arg VESPA_CA_CERT="${{ secrets.VESPA_CA_CERT }}" \
-            --remote-only
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npm run cf:d1:migrate
+
+      - name: Deploy Worker
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npm run cf:deploy

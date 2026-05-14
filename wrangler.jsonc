@@ -1,0 +1,30 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "vespa-search-api",
+	"main": "cloudflare/worker.js",
+	"compatibility_date": "2026-05-14",
+	"observability": {
+		"enabled": true
+	},
+	"vars": {
+		"MAX_INDEX_FILES": "80",
+		"MAX_INDEX_CHUNKS": "240"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "vespa-search-db",
+			"database_id": "f88f4a68-1a70-42bd-a2b8-d025fee07d31",
+			"migrations_dir": "cloudflare/migrations"
+		}
+	],
+	"vectorize": [
+		{
+			"binding": "VECTORIZE",
+			"index_name": "vespa-search-code"
+		}
+	],
+	"ai": {
+		"binding": "AI"
+	}
+}

@@ -1,0 +1,1768 @@
+================================================================================
+Kavia VS Code Extension - Application Log
+Session ID: 2026-01-27T10-21-22-455Z
+Started: 2026-01-27T10:21:22.455Z
+================================================================================
+2026-01-27T10:21:22.455Z
+[2026-01-27T10:21:22.455Z] [INFO] Streaming logger: /Users/chrismaxwell/code/vespa-search/.kavia/logs/streaming-2026-01-27T10-21-22-454Z.log
+2026-01-27T10:21:22.455Z
+[2026-01-27T10:21:22.455Z] [INFO] App logger: /Users/chrismaxwell/code/vespa-search/.kavia/logs/app-2026-01-27T10-21-22-455Z.log
+2026-01-27T10:21:22.456Z
+[2026-01-27T10:21:22.455Z] [ERROR] ❌ Failed to load .env file: ENOENT: no such file or directory, open '/Users/chrismaxwell/.vscode/extensions/.env'
+2026-01-27T10:21:22.456Z
+[2026-01-27T10:21:22.456Z] [INFO] SessionManager initialized
+2026-01-27T10:21:22.458Z
+[2026-01-27T10:21:22.458Z] [INFO] 🔌 Using WebSocket URL: wss://websocket-server-kavia-qa.cloud.kavia.ai
+2026-01-27T10:21:22.458Z
+[2026-01-27T10:21:22.458Z] [INFO] ✅ CGAWebSocketService instance #1 created
+2026-01-27T10:21:22.458Z
+[2026-01-27T10:21:22.458Z] [INFO] WebSocket instance info:
+[
+  {
+    "instanceId": 1,
+    "totalInstances": 1,
+    "isConnected": false
+  }
+]
+2026-01-27T10:21:22.459Z
+[2026-01-27T10:21:22.459Z] [INFO] ✅ WebSocket status indicator created
+2026-01-27T10:21:22.459Z
+[2026-01-27T10:21:22.459Z] [INFO] Updating BackendFacade configuration...
+2026-01-27T10:21:22.465Z
+[2026-01-27T10:21:22.465Z] [INFO] API Key: Missing
+2026-01-27T10:21:22.465Z
+[2026-01-27T10:21:22.465Z] [INFO] API Endpoint: https://kaviaqa-worktool.cloud.kavia.ai/api
+2026-01-27T10:21:22.465Z
+[2026-01-27T10:21:22.465Z] [DEBUG] [SYNC] WorkspaceSnapshotService initialized
+2026-01-27T10:21:22.466Z
+[2026-01-27T10:21:22.466Z] [INFO] [SYNC] GitHubIntegrationService initialized
+  Metadata: {
+  "authenticated": false,
+  "publicReposOnly": true
+}
+2026-01-27T10:21:22.466Z
+[2026-01-27T10:21:22.466Z] [INFO] [SYNC] WorkspaceApplierService initialized
+  Metadata: {
+  "backupDir": "/Users/chrismaxwell/Library/Application Support/Code/User/globalStorage/kavia.kavia-ai/file-backups"
+}
+2026-01-27T10:21:22.466Z
+[2026-01-27T10:21:22.466Z] [INFO] CodeMaintenanceService initialized
+2026-01-27T10:21:22.466Z
+[2026-01-27T10:21:22.466Z] [INFO] [CODE GEN SERVICE] Initialized
+2026-01-27T10:21:22.466Z
+[2026-01-27T10:21:22.466Z] [INFO] 🐛 Debug mode enabled - clearing chat history (no active maintenance session)
+2026-01-27T10:21:22.467Z
+[2026-01-27T10:21:22.467Z] [INFO] [SYNC] 🚀 BackendGitCommandService constructor called
+2026-01-27T10:21:22.467Z
+[2026-01-27T10:21:22.467Z] [DEBUG] [SYNC] BackendGitCommandService connection handler setup
+  Metadata: {
+  "isConnected": null
+}
+2026-01-27T10:21:22.467Z
+[2026-01-27T10:21:22.467Z] [INFO] [SYNC] 🚀 BackendGitCommandService initialization complete
+2026-01-27T10:21:22.467Z
+[2026-01-27T10:21:22.467Z] [INFO] [SYNC] CommitReviewStateService initialized
+2026-01-27T10:21:22.467Z
+[2026-01-27T10:21:22.467Z] [INFO] [SYNC] CodeSynchronizationService initialized with ChatService integration and BackendGitCommandService
+2026-01-27T10:21:22.467Z
+[2026-01-27T10:21:22.467Z] [INFO] 🔧 Setting up centralized WebSocket callbacks
+2026-01-27T10:21:22.467Z
+[2026-01-27T10:21:22.467Z] [INFO] ✅ Centralized WebSocket callbacks configured
+2026-01-27T10:21:22.467Z
+[2026-01-27T10:21:22.467Z] [INFO] 🔄 CodeSynchronizationService registered with ChatService
+2026-01-27T10:21:22.467Z
+[2026-01-27T10:21:22.467Z] [INFO] ✅ CodeSynchronizationService registered with ChatService (bidirectional integration)
+2026-01-27T10:21:22.467Z
+[2026-01-27T10:21:22.467Z] [INFO] ✅ Shared CGAWebSocketService instance used by both ChatService and CodeSynchronizationService
+2026-01-27T10:21:22.467Z
+[2026-01-27T10:21:22.467Z] [INFO] Registered provider: OpenRouter (openrouter)
+2026-01-27T10:21:22.467Z
+[2026-01-27T10:21:22.467Z] [INFO] Registered provider: OpenAI (openAI)
+2026-01-27T10:21:22.467Z
+[2026-01-27T10:21:22.467Z] [INFO] Registered provider: Kavia AI (kaviaAI)
+2026-01-27T10:21:22.472Z
+[2026-01-27T10:21:22.472Z] [INFO] [SYNC] ReviewChangesProvider initialized
+2026-01-27T10:21:22.472Z
+[2026-01-27T10:21:22.472Z] [INFO] ✅ ReviewChangesProvider initialized and callback wired
+2026-01-27T10:21:22.472Z
+[2026-01-27T10:21:22.472Z] [DEBUG] Diagnostic sync commands are disabled. Enable via "kavia.sync.enableDeveloperCommands"
+2026-01-27T10:21:22.472Z
+[2026-01-27T10:21:22.472Z] [INFO] [SYNC] BranchLifecycleManager initialized
+2026-01-27T10:21:22.473Z
+[2026-01-27T10:21:22.472Z] [INFO] [SYNC] Diagnostic branch lifecycle commands registered
+2026-01-27T10:21:22.473Z
+[2026-01-27T10:21:22.473Z] [INFO] ✅ File stream testing commands registered
+2026-01-27T10:21:22.473Z
+[2026-01-27T10:21:22.473Z] [INFO] ✅ File stream testing commands registered
+2026-01-27T10:21:22.478Z
+[2026-01-27T10:21:22.478Z] [INFO] ✅ Review commands registered
+2026-01-27T10:21:22.478Z
+[2026-01-27T10:21:22.478Z] [INFO] Kavia.ai extension activated successfully
+2026-01-27T10:21:27.593Z
+[2026-01-27T10:21:27.593Z] [INFO] Getting sessions for scopes: profile, email
+2026-01-27T10:21:29.313Z
+[2026-01-27T10:21:29.313Z] [INFO] Logging in with scopes: profile, email
+2026-01-27T10:21:29.313Z
+[2026-01-27T10:21:29.313Z] [INFO] Opening login URL: https://qa.chat.kavia.ai/login?redirect_uri%3Dvscode%3A%2F%2Fkavia.kavia-ai%2Fauth-callback%26state%3Dbd8039436108014b745ddccf5dc1ce5c35754e2ee2b83adee5fec0ea406416f0%26source%3Dvscode%26prompt%3Dlogin
+2026-01-27T10:21:38.207Z
+[2026-01-27T10:21:38.207Z] [INFO] Handling URI: vscode://kavia.kavia-ai/auth-callback?state%3Dbd8039436108014b745ddccf5dc1ce5c35754e2ee2b83adee5fec0ea406416f0%26token%3DeyJraWQiOiJrRTA5WVRPUEZrY0pNd2RXS2dRdXF0amRlQXZ6K252MFlmOFRZd0xETjhVPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIxNGQ4ZTRkOC1iMGQxLTcwYjYtMGUyMC1hZjJjZmI5ZWFkYjkiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiY3VzdG9tOk5hbWUiOiJDaHJpcyIsImN1c3RvbTpEZXNpZ25hdGlvbiI6IkFkbWluIiwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLnVzLWVhc3QtMS5hbWF6b25hd3MuY29tXC91cy1lYXN0LTFfa1M4UHhoTldpIiwiY29nbml0bzp1c2VybmFtZSI6IjE0ZDhlNGQ4LWIwZDEtNzBiNi0wZTIwLWFmMmNmYjllYWRiOSIsImN1c3RvbTp0ZW5hbnRfaWQiOiJUMDAxNSIsImN1c3RvbTppc19hZG1pbiI6InRydWUiLCJvcmlnaW5fanRpIjoiN2VkNWRkNTItZGVhMi00Nzc0LWI2MGMtYzdkYmFkYjBiYzhlIiwiYXVkIjoiNzQzNjNoc25wNTQ2YzFnaTRocDU2cGI4NnMiLCJjdXN0b206ZnJlZV91c2VyIjoiZmFsc2UiLCJldmVudF9pZCI6IjRmMDg5MjU2LTgxODItNDdmMC04NjM5LTVkMTk5OGU5MzNkYiIsImN1c3RvbTpEZXBhcnRtZW50IjoiQWRtaW4iLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTc2OTQ0MzY3MCwiZXhwIjoxNzY5NTMwMDcwLCJpYXQiOjE3Njk0NDM2NzAsImp0aSI6IjE4ZmQ0NWY0LTg5ODItNDAzNS1hMDM2LTc2OWE3YTI1NmFiYiIsImVtYWlsIjoiY2hyaXNAa2F2aWEuYWkifQ.EUu-dexMjN9yP9exVp4dLZXkNdAde28EB-n8RiLpfq8FaE0rSOyKvcetrnxJQh1e-cHclB5j8_uzUQIFtYLGhUGY7Gkc5-8gwMCZnPlEt2_FU3t0ZsBjKYujd0dbc3Q2ULEKTZ68Q6SM-n6usqkoeWYqdQxW-ZXB3GlHXiJC1XZHAPtw3o4ALtXag-NgO2vrbLbIjoqsWaAdkpPh7m6JrMQUbw2zvvHwFjLjpHSL97G5x-wrpKZ61GvT-Sm1jsBS2cWOvAkWEb9WWpX0jpp9Fm9zne7oO3J9ys5lJI-jHJXjhRERlEKx087SMp6g8MWJIkQpIsdOY5gNb-Nod7WBEA
+2026-01-27T10:21:38.208Z
+[2026-01-27T10:21:38.208Z] [INFO] Received callback URI:
+[
+  "vscode://kavia.kavia-ai/auth-callback?state%3Dbd8039436108014b745ddccf5dc1ce5c35754e2ee2b83adee5fec0ea406416f0%26token%3DeyJraWQiOiJrRTA5WVRPUEZrY0pNd2RXS2dRdXF0amRlQXZ6K252MFlmOFRZd0xETjhVPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiIxNGQ4ZTRkOC1iMGQxLTcwYjYtMGUyMC1hZjJjZmI5ZWFkYjkiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiY3VzdG9tOk5hbWUiOiJDaHJpcyIsImN1c3RvbTpEZXNpZ25hdGlvbiI6IkFkbWluIiwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLnVzLWVhc3QtMS5hbWF6b25hd3MuY29tXC91cy1lYXN0LTFfa1M4UHhoTldpIiwiY29nbml0bzp1c2VybmFtZSI6IjE0ZDhlNGQ4LWIwZDEtNzBiNi0wZTIwLWFmMmNmYjllYWRiOSIsImN1c3RvbTp0ZW5hbnRfaWQiOiJUMDAxNSIsImN1c3RvbTppc19hZG1pbiI6InRydWUiLCJvcmlnaW5fanRpIjoiN2VkNWRkNTItZGVhMi00Nzc0LWI2MGMtYzdkYmFkYjBiYzhlIiwiYXVkIjoiNzQzNjNoc25wNTQ2YzFnaTRocDU2cGI4NnMiLCJjdXN0b206ZnJlZV91c2VyIjoiZmFsc2UiLCJldmVudF9pZCI6IjRmMDg5MjU2LTgxODItNDdmMC04NjM5LTVkMTk5OGU5MzNkYiIsImN1c3RvbTpEZXBhcnRtZW50IjoiQWRtaW4iLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTc2OTQ0MzY3MCwiZXhwIjoxNzY5NTMwMDcwLCJpYXQiOjE3Njk0NDM2NzAsImp0aSI6IjE4ZmQ0NWY0LTg5ODItNDAzNS1hMDM2LTc2OWE3YTI1NmFiYiIsImVtYWlsIjoiY2hyaXNAa2F2aWEuYWkifQ.EUu-dexMjN9yP9exVp4dLZXkNdAde28EB-n8RiLpfq8FaE0rSOyKvcetrnxJQh1e-cHclB5j8_uzUQIFtYLGhUGY7Gkc5-8gwMCZnPlEt2_FU3t0ZsBjKYujd0dbc3Q2ULEKTZ68Q6SM-n6usqkoeWYqdQxW-ZXB3GlHXiJC1XZHAPtw3o4ALtXag-NgO2vrbLbIjoqsWaAdkpPh7m6JrMQUbw2zvvHwFjLjpHSL97G5x-wrpKZ61GvT-Sm1jsBS2cWOvAkWEb9WWpX0jpp9Fm9zne7oO3J9ys5lJI-jHJXjhRERlEKx087SMp6g8MWJIkQpIsdOY5gNb-Nod7WBEA"
+]
+2026-01-27T10:21:38.209Z
+[2026-01-27T10:21:38.209Z] [INFO] Callback URI parameters:
+[
+  {
+    "hasToken": true,
+    "tokenLength": 1289,
+    "tokenPreview": "eyJraWQiOiJrRTA5WVRP...",
+    "state": "bd8039436108014b745ddccf5dc1ce5c35754e2ee2b83adee5fec0ea406416f0",
+    "isValidState": true,
+    "pendingStatesCount": 1
+  }
+]
+2026-01-27T10:21:38.209Z
+[2026-01-27T10:21:38.209Z] [INFO] Resolving authentication promise with token
+2026-01-27T10:21:38.210Z
+[2026-01-27T10:21:38.210Z] [INFO] Fetching user info using new API infrastructure...
+2026-01-27T10:21:38.210Z
+[2026-01-27T10:21:38.210Z] [INFO] Fetching user details...
+2026-01-27T10:21:39.421Z
+[2026-01-27T10:21:39.421Z] [INFO] 🔍 [API] Response callback fired!
+2026-01-27T10:21:39.421Z
+[2026-01-27T10:21:39.421Z] [INFO] 🔍 [API] Status:
+[
+  401
+]
+2026-01-27T10:21:39.421Z
+[2026-01-27T10:21:39.421Z] [INFO] 🔍 [API] Headers:
+[
+  {
+    "content-type": "application/json",
+    "content-length": "86",
+    "connection": "close",
+    "date": "Tue, 27 Jan 2026 10:21:39 GMT",
+    "access-control-allow-headers": "*",
+    "server": "uvicorn",
+    "access-control-allow-origin": "*",
+    "access-control-allow-credentials": "true",
+    "access-control-allow-methods": "*",
+    "x-cache": "Error from cloudfront",
+    "via": "1.1 b5fdfdb58edf35e0d2f7e1eb97116ec6.cloudfront.net (CloudFront)",
+    "x-amz-cf-pop": "CPT51-P2",
+    "x-amz-cf-id": "C0quqTq-7s2rtpRn86y8rVjO_RMC-aQObXRUJadnYmWKIGKUisQDkg=="
+  }
+]
+2026-01-27T10:21:39.424Z
+[2026-01-27T10:21:39.423Z] [ERROR] Failed to get user details:
+{
+  "error": "Unauthorized: Your session has expired. You have been signed out.",
+  "stack": "Error: Unauthorized: Your session has expired. You have been signed out.\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1:3163)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:21:39.424Z
+[2026-01-27T10:21:39.424Z] [ERROR] Error fetching user info:
+{
+  "error": "Unauthorized: Your session has expired. You have been signed out.",
+  "stack": "Error: Unauthorized: Your session has expired. You have been signed out.\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1:3163)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:21:39.424Z
+[2026-01-27T10:21:39.424Z] [INFO] User info fetched:
+[
+  {
+    "email": "",
+    "name": "Kavia User",
+    "userId": "kavia-user",
+    "hasPicture": false
+  }
+]
+2026-01-27T10:21:39.450Z
+[2026-01-27T10:21:39.450Z] [INFO] Authentication session received:
+[
+  {
+    "id": "kavia-session",
+    "account": {
+      "label": "Kavia User",
+      "id": "kavia-user"
+    },
+    "scopes": [
+      "profile",
+      "email"
+    ],
+    "accessTokenLength": 1289,
+    "accessTokenPreview": "eyJraWQiOiJrRTA5WVRP..."
+  }
+]
+2026-01-27T10:21:39.452Z
+[2026-01-27T10:21:39.452Z] [INFO] Getting sessions for scopes: profile, email
+2026-01-27T10:21:39.498Z
+[2026-01-27T10:21:39.498Z] [INFO] Updated API key for Kavia AI
+2026-01-27T10:21:39.498Z
+[2026-01-27T10:21:39.498Z] [INFO] Updated API key for Kavia AI
+2026-01-27T10:21:39.498Z
+[2026-01-27T10:21:39.498Z] [INFO] API key set for kaviaAI
+2026-01-27T10:21:39.498Z
+[2026-01-27T10:21:39.498Z] [INFO] Token saved to configuration
+2026-01-27T10:21:39.498Z
+[2026-01-27T10:21:39.498Z] [INFO] Updating ChatService configuration...
+2026-01-27T10:21:39.498Z
+[2026-01-27T10:21:39.498Z] [INFO] Updating BackendFacade configuration...
+2026-01-27T10:21:39.502Z
+[2026-01-27T10:21:39.502Z] [INFO] API Key: Present
+2026-01-27T10:21:39.502Z
+[2026-01-27T10:21:39.502Z] [INFO] API Endpoint: https://kaviaqa-worktool.cloud.kavia.ai/api
+2026-01-27T10:21:39.503Z
+[2026-01-27T10:21:39.503Z] [INFO] Getting sessions for scopes: profile, email
+2026-01-27T10:21:39.504Z
+[2026-01-27T10:21:39.504Z] [INFO] Getting sessions for scopes: profile, email
+2026-01-27T10:21:56.380Z
+[2026-01-27T10:21:56.380Z] [INFO] 📝 CGA not active - running intent detection for regular chat
+2026-01-27T10:23:17.549Z
+[2026-01-27T10:23:17.548Z] [INFO] 📝 CGA not active - running intent detection for regular chat
+2026-01-27T10:23:25.896Z
+[2026-01-27T10:23:25.896Z] [INFO] Getting sessions for scopes: profile, email
+2026-01-27T10:23:25.912Z
+[2026-01-27T10:23:25.911Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:23:25.912Z
+[2026-01-27T10:23:25.912Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:23:25.912Z
+[2026-01-27T10:23:25.912Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:23:25.912Z
+[2026-01-27T10:23:25.912Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1289
+]
+2026-01-27T10:23:25.912Z
+[2026-01-27T10:23:25.912Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJrR..."
+]
+2026-01-27T10:23:25.932Z
+[2026-01-27T10:23:25.932Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:23:25.932Z
+[2026-01-27T10:23:25.932Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:23:25.932Z
+[2026-01-27T10:23:25.932Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:23:25.932Z
+[2026-01-27T10:23:25.932Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1289
+]
+2026-01-27T10:23:25.932Z
+[2026-01-27T10:23:25.932Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJrR..."
+]
+2026-01-27T10:23:25.942Z
+[2026-01-27T10:23:25.942Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:23:25.942Z
+[2026-01-27T10:23:25.942Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:23:25.942Z
+[2026-01-27T10:23:25.942Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:23:25.942Z
+[2026-01-27T10:23:25.942Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1289
+]
+2026-01-27T10:23:25.942Z
+[2026-01-27T10:23:25.942Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJrR..."
+]
+2026-01-27T10:23:27.305Z
+[2026-01-27T10:23:27.305Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:23:27.305Z
+[2026-01-27T10:23:27.305Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}"
+]
+2026-01-27T10:23:27.306Z
+[2026-01-27T10:23:27.305Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:23:27.348Z
+[2026-01-27T10:23:27.348Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:23:27.348Z
+[2026-01-27T10:23:27.348Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}"
+]
+2026-01-27T10:23:27.349Z
+[2026-01-27T10:23:27.348Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:23:27.423Z
+[2026-01-27T10:23:27.423Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:23:27.423Z
+[2026-01-27T10:23:27.423Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}"
+]
+2026-01-27T10:23:27.424Z
+[2026-01-27T10:23:27.423Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:23:28.710Z
+[2026-01-27T10:23:28.710Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:23:28.710Z
+[2026-01-27T10:23:28.710Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:23:28.710Z
+[2026-01-27T10:23:28.710Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:23:28.710Z
+[2026-01-27T10:23:28.710Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1289
+]
+2026-01-27T10:23:28.710Z
+[2026-01-27T10:23:28.710Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJrR..."
+]
+2026-01-27T10:23:28.729Z
+[2026-01-27T10:23:28.729Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:23:28.729Z
+[2026-01-27T10:23:28.729Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:23:28.729Z
+[2026-01-27T10:23:28.729Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:23:28.729Z
+[2026-01-27T10:23:28.729Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1289
+]
+2026-01-27T10:23:28.730Z
+[2026-01-27T10:23:28.729Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJrR..."
+]
+2026-01-27T10:23:28.746Z
+[2026-01-27T10:23:28.746Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:23:28.746Z
+[2026-01-27T10:23:28.746Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:23:28.746Z
+[2026-01-27T10:23:28.746Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:23:28.746Z
+[2026-01-27T10:23:28.746Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1289
+]
+2026-01-27T10:23:28.746Z
+[2026-01-27T10:23:28.746Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJrR..."
+]
+2026-01-27T10:23:29.328Z
+[2026-01-27T10:23:29.328Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:23:29.328Z
+[2026-01-27T10:23:29.328Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}"
+]
+2026-01-27T10:23:29.329Z
+[2026-01-27T10:23:29.328Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:23:29.477Z
+[2026-01-27T10:23:29.477Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:23:29.477Z
+[2026-01-27T10:23:29.477Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}"
+]
+2026-01-27T10:23:29.477Z
+[2026-01-27T10:23:29.477Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:23:29.581Z
+[2026-01-27T10:23:29.580Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:23:29.581Z
+[2026-01-27T10:23:29.581Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}"
+]
+2026-01-27T10:23:29.581Z
+[2026-01-27T10:23:29.581Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:24:02.258Z
+[2026-01-27T10:24:02.257Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:24:02.258Z
+[2026-01-27T10:24:02.258Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:24:02.258Z
+[2026-01-27T10:24:02.258Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:24:02.258Z
+[2026-01-27T10:24:02.258Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1289
+]
+2026-01-27T10:24:02.258Z
+[2026-01-27T10:24:02.258Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJrR..."
+]
+2026-01-27T10:24:02.275Z
+[2026-01-27T10:24:02.275Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:24:02.275Z
+[2026-01-27T10:24:02.275Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:24:02.275Z
+[2026-01-27T10:24:02.275Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:24:02.275Z
+[2026-01-27T10:24:02.275Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1289
+]
+2026-01-27T10:24:02.275Z
+[2026-01-27T10:24:02.275Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJrR..."
+]
+2026-01-27T10:24:02.288Z
+[2026-01-27T10:24:02.288Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:24:02.288Z
+[2026-01-27T10:24:02.288Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:24:02.288Z
+[2026-01-27T10:24:02.288Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:24:02.288Z
+[2026-01-27T10:24:02.288Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1289
+]
+2026-01-27T10:24:02.288Z
+[2026-01-27T10:24:02.288Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJrR..."
+]
+2026-01-27T10:24:02.724Z
+[2026-01-27T10:24:02.724Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:24:02.724Z
+[2026-01-27T10:24:02.724Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}"
+]
+2026-01-27T10:24:02.725Z
+[2026-01-27T10:24:02.725Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:24:02.875Z
+[2026-01-27T10:24:02.875Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:24:02.875Z
+[2026-01-27T10:24:02.875Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}"
+]
+2026-01-27T10:24:02.876Z
+[2026-01-27T10:24:02.876Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:24:02.995Z
+[2026-01-27T10:24:02.994Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:24:02.995Z
+[2026-01-27T10:24:02.995Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}"
+]
+2026-01-27T10:24:02.996Z
+[2026-01-27T10:24:02.995Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:24:05.926Z
+[2026-01-27T10:24:05.926Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:24:05.926Z
+[2026-01-27T10:24:05.926Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:24:05.926Z
+[2026-01-27T10:24:05.926Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:24:05.926Z
+[2026-01-27T10:24:05.926Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1289
+]
+2026-01-27T10:24:05.926Z
+[2026-01-27T10:24:05.926Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJrR..."
+]
+2026-01-27T10:24:05.938Z
+[2026-01-27T10:24:05.938Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:24:05.938Z
+[2026-01-27T10:24:05.938Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:24:05.938Z
+[2026-01-27T10:24:05.938Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:24:05.938Z
+[2026-01-27T10:24:05.938Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1289
+]
+2026-01-27T10:24:05.938Z
+[2026-01-27T10:24:05.938Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJrR..."
+]
+2026-01-27T10:24:05.949Z
+[2026-01-27T10:24:05.948Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:24:05.949Z
+[2026-01-27T10:24:05.949Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:24:05.949Z
+[2026-01-27T10:24:05.949Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:24:05.949Z
+[2026-01-27T10:24:05.949Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1289
+]
+2026-01-27T10:24:05.949Z
+[2026-01-27T10:24:05.949Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJrR..."
+]
+2026-01-27T10:24:06.368Z
+[2026-01-27T10:24:06.368Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:24:06.368Z
+[2026-01-27T10:24:06.368Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}"
+]
+2026-01-27T10:24:06.369Z
+[2026-01-27T10:24:06.369Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:24:06.374Z
+[2026-01-27T10:24:06.374Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:24:06.374Z
+[2026-01-27T10:24:06.374Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}"
+]
+2026-01-27T10:24:06.374Z
+[2026-01-27T10:24:06.374Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:24:06.377Z
+[2026-01-27T10:24:06.376Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:24:06.377Z
+[2026-01-27T10:24:06.377Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}"
+]
+2026-01-27T10:24:06.377Z
+[2026-01-27T10:24:06.377Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"Failed to get tenant credentials: No user pool found with name: qa-T0015\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:24:08.081Z
+[2026-01-27T10:24:08.081Z] [INFO] Updated API key for Kavia AI
+2026-01-27T10:24:08.081Z
+[2026-01-27T10:24:08.081Z] [INFO] Updated API key for Kavia AI
+2026-01-27T10:24:08.081Z
+[2026-01-27T10:24:08.081Z] [INFO] API key deleted for kaviaAI
+2026-01-27T10:27:40.114Z
+[2026-01-27T10:27:40.114Z] [INFO] Updated API key for Kavia AI
+2026-01-27T10:27:40.115Z
+[2026-01-27T10:27:40.115Z] [INFO] Updated API key for Kavia AI
+2026-01-27T10:27:40.115Z
+[2026-01-27T10:27:40.115Z] [INFO] API key set for kaviaAI
+2026-01-27T10:27:40.116Z
+[2026-01-27T10:27:40.116Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:27:40.116Z
+[2026-01-27T10:27:40.116Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:27:40.116Z
+[2026-01-27T10:27:40.116Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:27:40.116Z
+[2026-01-27T10:27:40.116Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1071
+]
+2026-01-27T10:27:40.116Z
+[2026-01-27T10:27:40.116Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJkc..."
+]
+2026-01-27T10:27:40.183Z
+[2026-01-27T10:27:40.183Z] [INFO] Getting sessions for scopes: profile, email
+2026-01-27T10:27:40.183Z
+[2026-01-27T10:27:40.183Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:27:40.183Z
+[2026-01-27T10:27:40.183Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:27:40.183Z
+[2026-01-27T10:27:40.183Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:27:40.183Z
+[2026-01-27T10:27:40.183Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1071
+]
+2026-01-27T10:27:40.183Z
+[2026-01-27T10:27:40.183Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJkc..."
+]
+2026-01-27T10:27:40.936Z
+[2026-01-27T10:27:40.935Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:27:40.936Z
+[2026-01-27T10:27:40.936Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"401: Invalid token\"}"
+]
+2026-01-27T10:27:40.937Z
+[2026-01-27T10:27:40.936Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:27:40.940Z
+[2026-01-27T10:27:40.940Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:27:40.940Z
+[2026-01-27T10:27:40.940Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"401: Invalid token\"}"
+]
+2026-01-27T10:27:40.940Z
+[2026-01-27T10:27:40.940Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:29:37.314Z
+[2026-01-27T10:29:37.313Z] [INFO] Updated API key for Kavia AI
+2026-01-27T10:29:37.314Z
+[2026-01-27T10:29:37.314Z] [INFO] Updated API key for Kavia AI
+2026-01-27T10:29:37.314Z
+[2026-01-27T10:29:37.314Z] [INFO] API key deleted for kaviaAI
+2026-01-27T10:29:42.435Z
+[2026-01-27T10:29:42.435Z] [INFO] Active provider set to: kaviaAI (Model: default)
+2026-01-27T10:29:49.753Z
+[2026-01-27T10:29:49.753Z] [INFO] Getting sessions for scopes: profile, email
+2026-01-27T10:29:51.804Z
+[2026-01-27T10:29:51.804Z] [INFO] Getting sessions for scopes: profile, email
+2026-01-27T10:29:54.718Z
+[2026-01-27T10:29:54.717Z] [INFO] Logging in with scopes: profile, email
+2026-01-27T10:29:54.719Z
+[2026-01-27T10:29:54.719Z] [INFO] Opening login URL: https://qa.chat.kavia.ai/login?redirect_uri%3Dvscode%3A%2F%2Fkavia.kavia-ai%2Fauth-callback%26state%3D0640f0a0f4a1c93a2ce1d457339f64174ae9df44160ceb7fd3223c9a994afdfc%26source%3Dvscode%26prompt%3Dlogin
+2026-01-27T10:30:06.430Z
+[2026-01-27T10:30:06.430Z] [INFO] Handling URI: vscode://kavia.kavia-ai/auth-callback?state%3D0640f0a0f4a1c93a2ce1d457339f64174ae9df44160ceb7fd3223c9a994afdfc%26token%3DeyJraWQiOiJNYmJrVHd2alZsTjZ3Z25NNmdvenFJU0hmeXBoMnoyWnJFRlFsc05DWEJVPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiI5NDc4MDQxOC1lMDgxLTcwNGUtMjg0Ni05MWM5NTY1MzhjMzAiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiY3VzdG9tOk5hbWUiOiJDaHJpcyBNYXh3ZWxsIiwiY3VzdG9tOkRlc2lnbmF0aW9uIjoiQWRtaW5pc3RyYXRvciIsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX3ZucEFhSEVnViIsImNvZ25pdG86dXNlcm5hbWUiOiI5NDc4MDQxOC1lMDgxLTcwNGUtMjg0Ni05MWM5NTY1MzhjMzAiLCJvcmlnaW5fanRpIjoiNGY2ZjU5N2EtNTEwOS00YjY3LTgxMWItODI0YWVlYTJiOTNhIiwiYXVkIjoiMWVydWV0c3YzbzlsZWE3YWJjOGNtaHUxNmgiLCJldmVudF9pZCI6ImY1Y2FiZjdjLWFhODItNGQ5Yi04ZjhjLTlhNWYzN2U5M2U2ZCIsImN1c3RvbTpEZXBhcnRtZW50IjoiQWRtaW4iLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTc2OTAyMjc5NiwiZXhwIjoxNzY5NTIxOTk1LCJpYXQiOjE3Njk0MzU1OTUsImp0aSI6IjIwMTgwMmQ1LTJkZWItNDg3Zi04NmRhLTk4M2FkOWM0OWZlMCIsImVtYWlsIjoiY2hyaXNAa2F2aWEuYWkifQ.JuWgTF2wEj4BG2GA-ZqfEEmZuacoSFbbGmAOcc8xPGD8ClHxtDGjw3LMest-APT0ePD34OIt-xGC25GPFPMQrhSE9ghCYlJ6iOIBSkiD5Q_POgTs5N-yEgcVEYJ5gXTOV_xGuTPL02wHZKnK1GOBEn4gFVY0BdzX-ev5u1vYFtoI5BvFYy7T9OUQ6jKzep1yTq97c1BMPRPSu28ab7NhrIS3nqNzKXqRg5_FzC6cWVdNnzJzLH6TdVOSDZqtsrKCf_hJZp3Qt1b-zKnCGC85r2GiOiPz40Bq0dXxFvLrPYv7xFEZ_mpy5-EbovAIidUx3QM1gJZDpsoTiKywgDXsgA
+2026-01-27T10:30:06.430Z
+[2026-01-27T10:30:06.430Z] [INFO] Received callback URI:
+[
+  "vscode://kavia.kavia-ai/auth-callback?state%3D0640f0a0f4a1c93a2ce1d457339f64174ae9df44160ceb7fd3223c9a994afdfc%26token%3DeyJraWQiOiJNYmJrVHd2alZsTjZ3Z25NNmdvenFJU0hmeXBoMnoyWnJFRlFsc05DWEJVPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiI5NDc4MDQxOC1lMDgxLTcwNGUtMjg0Ni05MWM5NTY1MzhjMzAiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiY3VzdG9tOk5hbWUiOiJDaHJpcyBNYXh3ZWxsIiwiY3VzdG9tOkRlc2lnbmF0aW9uIjoiQWRtaW5pc3RyYXRvciIsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy1lYXN0LTEuYW1hem9uYXdzLmNvbVwvdXMtZWFzdC0xX3ZucEFhSEVnViIsImNvZ25pdG86dXNlcm5hbWUiOiI5NDc4MDQxOC1lMDgxLTcwNGUtMjg0Ni05MWM5NTY1MzhjMzAiLCJvcmlnaW5fanRpIjoiNGY2ZjU5N2EtNTEwOS00YjY3LTgxMWItODI0YWVlYTJiOTNhIiwiYXVkIjoiMWVydWV0c3YzbzlsZWE3YWJjOGNtaHUxNmgiLCJldmVudF9pZCI6ImY1Y2FiZjdjLWFhODItNGQ5Yi04ZjhjLTlhNWYzN2U5M2U2ZCIsImN1c3RvbTpEZXBhcnRtZW50IjoiQWRtaW4iLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTc2OTAyMjc5NiwiZXhwIjoxNzY5NTIxOTk1LCJpYXQiOjE3Njk0MzU1OTUsImp0aSI6IjIwMTgwMmQ1LTJkZWItNDg3Zi04NmRhLTk4M2FkOWM0OWZlMCIsImVtYWlsIjoiY2hyaXNAa2F2aWEuYWkifQ.JuWgTF2wEj4BG2GA-ZqfEEmZuacoSFbbGmAOcc8xPGD8ClHxtDGjw3LMest-APT0ePD34OIt-xGC25GPFPMQrhSE9ghCYlJ6iOIBSkiD5Q_POgTs5N-yEgcVEYJ5gXTOV_xGuTPL02wHZKnK1GOBEn4gFVY0BdzX-ev5u1vYFtoI5BvFYy7T9OUQ6jKzep1yTq97c1BMPRPSu28ab7NhrIS3nqNzKXqRg5_FzC6cWVdNnzJzLH6TdVOSDZqtsrKCf_hJZp3Qt1b-zKnCGC85r2GiOiPz40Bq0dXxFvLrPYv7xFEZ_mpy5-EbovAIidUx3QM1gJZDpsoTiKywgDXsgA"
+]
+2026-01-27T10:30:06.431Z
+[2026-01-27T10:30:06.431Z] [INFO] Callback URI parameters:
+[
+  {
+    "hasToken": true,
+    "tokenLength": 1205,
+    "tokenPreview": "eyJraWQiOiJNYmJrVHd2...",
+    "state": "0640f0a0f4a1c93a2ce1d457339f64174ae9df44160ceb7fd3223c9a994afdfc",
+    "isValidState": true,
+    "pendingStatesCount": 1
+  }
+]
+2026-01-27T10:30:06.431Z
+[2026-01-27T10:30:06.431Z] [INFO] Resolving authentication promise with token
+2026-01-27T10:30:06.431Z
+[2026-01-27T10:30:06.431Z] [INFO] Fetching user info using new API infrastructure...
+2026-01-27T10:30:06.431Z
+[2026-01-27T10:30:06.431Z] [INFO] Fetching user details...
+2026-01-27T10:30:07.196Z
+[2026-01-27T10:30:07.196Z] [INFO] 🔍 [API] Response callback fired!
+2026-01-27T10:30:07.196Z
+[2026-01-27T10:30:07.196Z] [INFO] 🔍 [API] Status:
+[
+  401
+]
+2026-01-27T10:30:07.197Z
+[2026-01-27T10:30:07.197Z] [INFO] 🔍 [API] Headers:
+[
+  {
+    "content-type": "application/json",
+    "content-length": "32",
+    "connection": "close",
+    "date": "Tue, 27 Jan 2026 10:30:07 GMT",
+    "access-control-allow-headers": "*",
+    "server": "uvicorn",
+    "access-control-allow-origin": "*",
+    "access-control-allow-credentials": "true",
+    "access-control-allow-methods": "*",
+    "x-cache": "Error from cloudfront",
+    "via": "1.1 a9ff49610b630cc2c9b18866dc891cf4.cloudfront.net (CloudFront)",
+    "x-amz-cf-pop": "CPT51-P2",
+    "x-amz-cf-id": "cMl7wZv8Uq8rhSyVEW3LrTVQa0kxBvorzx4_XPhqjYTmcR_GnXdrtQ=="
+  }
+]
+2026-01-27T10:30:07.197Z
+[2026-01-27T10:30:07.197Z] [ERROR] Failed to get user details:
+{
+  "error": "Unauthorized: Your session has expired. You have been signed out.",
+  "stack": "Error: Unauthorized: Your session has expired. You have been signed out.\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1:3163)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:30:07.197Z
+[2026-01-27T10:30:07.197Z] [ERROR] Error fetching user info:
+{
+  "error": "Unauthorized: Your session has expired. You have been signed out.",
+  "stack": "Error: Unauthorized: Your session has expired. You have been signed out.\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1:3163)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:30:07.197Z
+[2026-01-27T10:30:07.197Z] [INFO] User info fetched:
+[
+  {
+    "email": "",
+    "name": "Kavia User",
+    "userId": "kavia-user",
+    "hasPicture": false
+  }
+]
+2026-01-27T10:30:07.213Z
+[2026-01-27T10:30:07.213Z] [INFO] Authentication session received:
+[
+  {
+    "id": "kavia-session",
+    "account": {
+      "label": "Kavia User",
+      "id": "kavia-user"
+    },
+    "scopes": [
+      "profile",
+      "email"
+    ],
+    "accessTokenLength": 1205,
+    "accessTokenPreview": "eyJraWQiOiJNYmJrVHd2..."
+  }
+]
+2026-01-27T10:30:07.214Z
+[2026-01-27T10:30:07.213Z] [INFO] Getting sessions for scopes: profile, email
+2026-01-27T10:30:07.220Z
+[2026-01-27T10:30:07.220Z] [INFO] Updated API key for Kavia AI
+2026-01-27T10:30:07.220Z
+[2026-01-27T10:30:07.220Z] [INFO] Updated API key for Kavia AI
+2026-01-27T10:30:07.221Z
+[2026-01-27T10:30:07.220Z] [INFO] API key set for kaviaAI
+2026-01-27T10:30:07.221Z
+[2026-01-27T10:30:07.221Z] [INFO] Token saved to configuration
+2026-01-27T10:30:07.221Z
+[2026-01-27T10:30:07.221Z] [INFO] Updating ChatService configuration...
+2026-01-27T10:30:07.221Z
+[2026-01-27T10:30:07.221Z] [INFO] Updating BackendFacade configuration...
+2026-01-27T10:30:07.226Z
+[2026-01-27T10:30:07.226Z] [INFO] API Key: Present
+2026-01-27T10:30:07.226Z
+[2026-01-27T10:30:07.226Z] [INFO] API Endpoint: https://kaviaqa-worktool.cloud.kavia.ai/api
+2026-01-27T10:30:07.234Z
+[2026-01-27T10:30:07.234Z] [INFO] Getting sessions for scopes: profile, email
+2026-01-27T10:30:07.237Z
+[2026-01-27T10:30:07.237Z] [INFO] Getting sessions for scopes: profile, email
+2026-01-27T10:30:10.332Z
+[2026-01-27T10:30:10.332Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:30:10.332Z
+[2026-01-27T10:30:10.332Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:30:10.332Z
+[2026-01-27T10:30:10.332Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:30:10.332Z
+[2026-01-27T10:30:10.332Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T10:30:10.332Z
+[2026-01-27T10:30:10.332Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T10:30:10.354Z
+[2026-01-27T10:30:10.354Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:30:10.355Z
+[2026-01-27T10:30:10.354Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:30:10.355Z
+[2026-01-27T10:30:10.355Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:30:10.355Z
+[2026-01-27T10:30:10.355Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T10:30:10.355Z
+[2026-01-27T10:30:10.355Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T10:30:10.679Z
+[2026-01-27T10:30:10.679Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:30:10.680Z
+[2026-01-27T10:30:10.680Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"401: Invalid token\"}"
+]
+2026-01-27T10:30:10.680Z
+[2026-01-27T10:30:10.680Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:30:10.997Z
+[2026-01-27T10:30:10.997Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:30:10.997Z
+[2026-01-27T10:30:10.997Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"401: Invalid token\"}"
+]
+2026-01-27T10:30:10.998Z
+[2026-01-27T10:30:10.998Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:30:26.908Z
+[2026-01-27T10:30:26.908Z] [INFO] 📝 CGA not active - running intent detection for regular chat
+2026-01-27T10:30:34.466Z
+[2026-01-27T10:30:34.466Z] [INFO] 📝 CGA not active - running intent detection for regular chat
+2026-01-27T10:30:40.432Z
+[2026-01-27T10:30:40.431Z] [INFO] 📝 CGA not active - running intent detection for regular chat
+2026-01-27T10:30:51.384Z
+[2026-01-27T10:30:51.384Z] [INFO] 📝 CGA not active - running intent detection for regular chat
+2026-01-27T10:30:53.553Z
+[2026-01-27T10:30:53.553Z] [INFO] 📝 CGA not active - running intent detection for regular chat
+2026-01-27T10:30:59.121Z
+[2026-01-27T10:30:59.121Z] [INFO] Getting sessions for scopes: profile, email
+2026-01-27T10:30:59.122Z
+[2026-01-27T10:30:59.122Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:30:59.123Z
+[2026-01-27T10:30:59.122Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:30:59.123Z
+[2026-01-27T10:30:59.123Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:30:59.123Z
+[2026-01-27T10:30:59.123Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T10:30:59.123Z
+[2026-01-27T10:30:59.123Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T10:30:59.134Z
+[2026-01-27T10:30:59.134Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:30:59.134Z
+[2026-01-27T10:30:59.134Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:30:59.134Z
+[2026-01-27T10:30:59.134Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:30:59.134Z
+[2026-01-27T10:30:59.134Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T10:30:59.134Z
+[2026-01-27T10:30:59.134Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T10:30:59.146Z
+[2026-01-27T10:30:59.146Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:30:59.146Z
+[2026-01-27T10:30:59.146Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:30:59.146Z
+[2026-01-27T10:30:59.146Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:30:59.146Z
+[2026-01-27T10:30:59.146Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T10:30:59.146Z
+[2026-01-27T10:30:59.146Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T10:30:59.683Z
+[2026-01-27T10:30:59.683Z] [INFO] Getting sessions for scopes: profile, email
+2026-01-27T10:30:59.685Z
+[2026-01-27T10:30:59.685Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:30:59.685Z
+[2026-01-27T10:30:59.685Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:30:59.685Z
+[2026-01-27T10:30:59.685Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:30:59.685Z
+[2026-01-27T10:30:59.685Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T10:30:59.685Z
+[2026-01-27T10:30:59.685Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T10:30:59.694Z
+[2026-01-27T10:30:59.694Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:30:59.694Z
+[2026-01-27T10:30:59.694Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:30:59.694Z
+[2026-01-27T10:30:59.694Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:30:59.694Z
+[2026-01-27T10:30:59.694Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T10:30:59.694Z
+[2026-01-27T10:30:59.694Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T10:30:59.703Z
+[2026-01-27T10:30:59.703Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:30:59.703Z
+[2026-01-27T10:30:59.703Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:30:59.703Z
+[2026-01-27T10:30:59.703Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:30:59.703Z
+[2026-01-27T10:30:59.703Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T10:30:59.703Z
+[2026-01-27T10:30:59.703Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T10:30:59.712Z
+[2026-01-27T10:30:59.712Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:30:59.712Z
+[2026-01-27T10:30:59.712Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"401: Invalid token\"}"
+]
+2026-01-27T10:30:59.721Z
+[2026-01-27T10:30:59.712Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:30:59.769Z
+[2026-01-27T10:30:59.769Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:30:59.769Z
+[2026-01-27T10:30:59.769Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"401: Invalid token\"}"
+]
+2026-01-27T10:30:59.769Z
+[2026-01-27T10:30:59.769Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:30:59.994Z
+[2026-01-27T10:30:59.993Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:30:59.994Z
+[2026-01-27T10:30:59.994Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"401: Invalid token\"}"
+]
+2026-01-27T10:30:59.995Z
+[2026-01-27T10:30:59.995Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:31:00.024Z
+[2026-01-27T10:31:00.024Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:31:00.024Z
+[2026-01-27T10:31:00.024Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"401: Invalid token\"}"
+]
+2026-01-27T10:31:00.025Z
+[2026-01-27T10:31:00.024Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:31:00.282Z
+[2026-01-27T10:31:00.281Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:31:00.282Z
+[2026-01-27T10:31:00.282Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"401: Invalid token\"}"
+]
+2026-01-27T10:31:00.282Z
+[2026-01-27T10:31:00.282Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:31:00.292Z
+[2026-01-27T10:31:00.292Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:31:00.292Z
+[2026-01-27T10:31:00.292Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"401: Invalid token\"}"
+]
+2026-01-27T10:31:00.293Z
+[2026-01-27T10:31:00.292Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:34:08.553Z
+[2026-01-27T10:34:08.553Z] [INFO] Getting sessions for scopes: profile, email
+2026-01-27T10:34:08.556Z
+[2026-01-27T10:34:08.556Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:34:08.556Z
+[2026-01-27T10:34:08.556Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:34:08.556Z
+[2026-01-27T10:34:08.556Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:34:08.556Z
+[2026-01-27T10:34:08.556Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T10:34:08.556Z
+[2026-01-27T10:34:08.556Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T10:34:08.565Z
+[2026-01-27T10:34:08.565Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:34:08.565Z
+[2026-01-27T10:34:08.565Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:34:08.565Z
+[2026-01-27T10:34:08.565Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:34:08.565Z
+[2026-01-27T10:34:08.565Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T10:34:08.565Z
+[2026-01-27T10:34:08.565Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T10:34:08.573Z
+[2026-01-27T10:34:08.573Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://kaviaqa-worktool.cloud.kavia.ai/api/vscode/models"
+]
+2026-01-27T10:34:08.573Z
+[2026-01-27T10:34:08.573Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "kaviaqa-worktool.cloud.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T10:34:08.573Z
+[2026-01-27T10:34:08.573Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T10:34:08.573Z
+[2026-01-27T10:34:08.573Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T10:34:08.573Z
+[2026-01-27T10:34:08.573Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T10:34:09.238Z
+[2026-01-27T10:34:09.238Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:34:09.238Z
+[2026-01-27T10:34:09.238Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"401: Invalid token\"}"
+]
+2026-01-27T10:34:09.239Z
+[2026-01-27T10:34:09.239Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:34:09.271Z
+[2026-01-27T10:34:09.271Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:34:09.271Z
+[2026-01-27T10:34:09.271Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"401: Invalid token\"}"
+]
+2026-01-27T10:34:09.272Z
+[2026-01-27T10:34:09.272Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T10:34:09.289Z
+[2026-01-27T10:34:09.289Z] [DEBUG] Kavia listModels - Response status:
+[
+  401
+]
+2026-01-27T10:34:09.289Z
+[2026-01-27T10:34:09.289Z] [DEBUG] Kavia listModels - Response body:
+[
+  "{\"message\":\"401: Invalid token\"}"
+]
+2026-01-27T10:34:09.290Z
+[2026-01-27T10:34:09.289Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}",
+  "stack": "Error: Kavia models HTTP 401: Unauthorized - {\"message\":\"401: Invalid token\"}\n    at IncomingMessage.<anonymous> (/Users/chrismaxwell/.vscode/extensions/kavia.kavia-ai-0.4.2-qa/dist/index.js:1450:21090)\n    at IncomingMessage.emit (node:events:531:35)\n    at IncomingMessage.emit (node:domain:489:12)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at processTicksAndRejections (node:internal/process/task_queues:90:21)"
+}
+2026-01-27T11:11:33.847Z
+[2026-01-27T11:11:33.847Z] [INFO] Getting sessions for scopes: profile, email
+2026-01-27T11:11:33.850Z
+[2026-01-27T11:11:33.850Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://api.kavia.ai/api/vscode/models"
+]
+2026-01-27T11:11:33.850Z
+[2026-01-27T11:11:33.850Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "api.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T11:11:33.850Z
+[2026-01-27T11:11:33.850Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T11:11:33.850Z
+[2026-01-27T11:11:33.850Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T11:11:33.850Z
+[2026-01-27T11:11:33.850Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T11:11:33.856Z
+[2026-01-27T11:11:33.856Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://api.kavia.ai/api/vscode/models"
+]
+2026-01-27T11:11:33.856Z
+[2026-01-27T11:11:33.856Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "api.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T11:11:33.856Z
+[2026-01-27T11:11:33.856Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T11:11:33.856Z
+[2026-01-27T11:11:33.856Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T11:11:33.856Z
+[2026-01-27T11:11:33.856Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T11:11:33.859Z
+[2026-01-27T11:11:33.859Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://api.kavia.ai/api/vscode/models"
+]
+2026-01-27T11:11:33.859Z
+[2026-01-27T11:11:33.859Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "api.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T11:11:33.859Z
+[2026-01-27T11:11:33.859Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T11:11:33.859Z
+[2026-01-27T11:11:33.859Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T11:11:33.859Z
+[2026-01-27T11:11:33.859Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T11:11:33.906Z
+[2026-01-27T11:11:33.906Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "getaddrinfo ENOTFOUND api.kavia.ai",
+  "stack": "Error: getaddrinfo ENOTFOUND api.kavia.ai\n    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)\n    at GetAddrInfoReqWrap.callbackTrampoline (node:internal/async_hooks:130:17)"
+}
+2026-01-27T11:11:33.906Z
+[2026-01-27T11:11:33.906Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "getaddrinfo ENOTFOUND api.kavia.ai",
+  "stack": "Error: getaddrinfo ENOTFOUND api.kavia.ai\n    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)\n    at GetAddrInfoReqWrap.callbackTrampoline (node:internal/async_hooks:130:17)"
+}
+2026-01-27T11:11:33.907Z
+[2026-01-27T11:11:33.907Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "getaddrinfo ENOTFOUND api.kavia.ai",
+  "stack": "Error: getaddrinfo ENOTFOUND api.kavia.ai\n    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)\n    at GetAddrInfoReqWrap.callbackTrampoline (node:internal/async_hooks:130:17)"
+}
+2026-01-27T11:11:37.291Z
+[2026-01-27T11:11:37.291Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://api.kavia.ai/api/vscode/models"
+]
+2026-01-27T11:11:37.291Z
+[2026-01-27T11:11:37.291Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "api.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T11:11:37.291Z
+[2026-01-27T11:11:37.291Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T11:11:37.291Z
+[2026-01-27T11:11:37.291Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T11:11:37.291Z
+[2026-01-27T11:11:37.291Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T11:11:37.307Z
+[2026-01-27T11:11:37.307Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://api.kavia.ai/api/vscode/models"
+]
+2026-01-27T11:11:37.308Z
+[2026-01-27T11:11:37.307Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "api.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T11:11:37.308Z
+[2026-01-27T11:11:37.308Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T11:11:37.308Z
+[2026-01-27T11:11:37.308Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T11:11:37.308Z
+[2026-01-27T11:11:37.308Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T11:11:37.320Z
+[2026-01-27T11:11:37.320Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "getaddrinfo ENOTFOUND api.kavia.ai",
+  "stack": "Error: getaddrinfo ENOTFOUND api.kavia.ai\n    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)\n    at GetAddrInfoReqWrap.callbackTrampoline (node:internal/async_hooks:130:17)"
+}
+2026-01-27T11:11:37.321Z
+[2026-01-27T11:11:37.321Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://api.kavia.ai/api/vscode/models"
+]
+2026-01-27T11:11:37.321Z
+[2026-01-27T11:11:37.321Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "api.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T11:11:37.321Z
+[2026-01-27T11:11:37.321Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T11:11:37.321Z
+[2026-01-27T11:11:37.321Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T11:11:37.321Z
+[2026-01-27T11:11:37.321Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T11:11:37.332Z
+[2026-01-27T11:11:37.332Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "getaddrinfo ENOTFOUND api.kavia.ai",
+  "stack": "Error: getaddrinfo ENOTFOUND api.kavia.ai\n    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)\n    at GetAddrInfoReqWrap.callbackTrampoline (node:internal/async_hooks:130:17)"
+}
+2026-01-27T11:11:37.334Z
+[2026-01-27T11:11:37.334Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "getaddrinfo ENOTFOUND api.kavia.ai",
+  "stack": "Error: getaddrinfo ENOTFOUND api.kavia.ai\n    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)\n    at GetAddrInfoReqWrap.callbackTrampoline (node:internal/async_hooks:130:17)"
+}
+2026-01-27T11:12:28.697Z
+[2026-01-27T11:12:28.697Z] [INFO] Getting sessions for scopes: profile, email
+2026-01-27T11:12:28.713Z
+[2026-01-27T11:12:28.713Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://api.kavia.ai/api/vscode/models"
+]
+2026-01-27T11:12:28.713Z
+[2026-01-27T11:12:28.713Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "api.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T11:12:28.714Z
+[2026-01-27T11:12:28.714Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T11:12:28.714Z
+[2026-01-27T11:12:28.714Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T11:12:28.714Z
+[2026-01-27T11:12:28.714Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T11:12:28.726Z
+[2026-01-27T11:12:28.726Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://api.kavia.ai/api/vscode/models"
+]
+2026-01-27T11:12:28.726Z
+[2026-01-27T11:12:28.726Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "api.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T11:12:28.727Z
+[2026-01-27T11:12:28.726Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T11:12:28.727Z
+[2026-01-27T11:12:28.727Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T11:12:28.727Z
+[2026-01-27T11:12:28.727Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T11:12:28.735Z
+[2026-01-27T11:12:28.734Z] [DEBUG] Kavia listModels - Request URL:
+[
+  "https://api.kavia.ai/api/vscode/models"
+]
+2026-01-27T11:12:28.735Z
+[2026-01-27T11:12:28.735Z] [DEBUG] Kavia listModels - Endpoint:
+[
+  "api.kavia.ai",
+  "",
+  "/api/vscode/models"
+]
+2026-01-27T11:12:28.735Z
+[2026-01-27T11:12:28.735Z] [DEBUG] Kavia listModels - API Key present:
+[
+  true
+]
+2026-01-27T11:12:28.735Z
+[2026-01-27T11:12:28.735Z] [DEBUG] Kavia listModels - API Key length:
+[
+  1205
+]
+2026-01-27T11:12:28.735Z
+[2026-01-27T11:12:28.735Z] [DEBUG] Kavia listModels - Authorization header:
+[
+  "Bearer eyJraWQiOiJNY..."
+]
+2026-01-27T11:12:28.742Z
+[2026-01-27T11:12:28.742Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "getaddrinfo ENOTFOUND api.kavia.ai",
+  "stack": "Error: getaddrinfo ENOTFOUND api.kavia.ai\n    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)\n    at GetAddrInfoReqWrap.callbackTrampoline (node:internal/async_hooks:130:17)"
+}
+2026-01-27T11:12:28.743Z
+[2026-01-27T11:12:28.742Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "getaddrinfo ENOTFOUND api.kavia.ai",
+  "stack": "Error: getaddrinfo ENOTFOUND api.kavia.ai\n    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)\n    at GetAddrInfoReqWrap.callbackTrampoline (node:internal/async_hooks:130:17)"
+}
+2026-01-27T11:12:28.745Z
+[2026-01-27T11:12:28.745Z] [ERROR] Failed to load Kavia AI models:
+{
+  "error": "getaddrinfo ENOTFOUND api.kavia.ai",
+  "stack": "Error: getaddrinfo ENOTFOUND api.kavia.ai\n    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:122:26)\n    at GetAddrInfoReqWrap.callbackTrampoline (node:internal/async_hooks:130:17)"
+}
+2026-01-27T11:12:35.870Z
+[2026-01-27T11:12:35.870Z] [INFO] 📝 CGA not active - running intent detection for regular chat
+2026-01-27T11:12:37.830Z
+[2026-01-27T11:12:37.830Z] [INFO] 📝 CGA not active - running intent detection for regular chat
+2026-01-27T11:14:51.092Z
+[2026-01-27T11:14:51.092Z] [INFO] Kavia.ai extension is deactivating...
+
+================================================================================
+Session Ended: 2026-01-27T11:14:51.092Z
+================================================================================

@@ -1,0 +1,16 @@
+{
+  "name": "vespa-search-cloudflare",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "cf:dev": "wrangler dev",
+    "cf:deploy": "wrangler deploy",
+    "cf:d1:migrate": "wrangler d1 migrations apply vespa-search-db --remote",
+    "cf:pages:build": "npm --prefix frontend run build",
+    "cf:pages:deploy": "wrangler pages deploy frontend/out --project-name vespa-search"
+  },
+  "devDependencies": {
+    "wrangler": "^4.18.0"
+  }
+}

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || 'https://vespa-search.fly.dev';
+  process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8787';
 
 export default function RepoWiki() {
   const router = useRouter();
@@ -96,7 +96,7 @@ export default function RepoWiki() {
         <div className="brand">
           <span className="logo">V</span>
           <div>
-            <strong>Vespa Search</strong>
+            <strong>Cloudflare Search</strong>
             <span>CodeWiki</span>
           </div>
         </div>

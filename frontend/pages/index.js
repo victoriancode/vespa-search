@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || 'https://vespa-search.fly.dev';
+  process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8787';
 const GITHUB_ORG = process.env.NEXT_PUBLIC_GITHUB_ORG || 'victoriancode';
 
 export default function Home() {
@@ -114,7 +114,7 @@ export default function Home() {
       <header className="topbar">
         <div className="brand">
           <div>
-            <strong>Vespa Vector Search</strong>
+            <strong>Cloudflare Vector Search</strong>
             <span>CodeWiki</span>
           </div>
         </div>
@@ -135,7 +135,7 @@ export default function Home() {
             <div className="hero-meta">
               <span className="pill">Semantic + keyword</span>
               <span className="pill ghost">Auto-snippets</span>
-              <span className="pill ghost">Vespa powered</span>
+              <span className="pill ghost">Vectorize powered</span>
             </div>
           </div>
         </section>
