@@ -1,7 +1,6 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "vespa-search-api",
-	"account_id": "63b1211944f000e76fc168f575d0653e",
 	"main": "cloudflare/worker.js",
 	"compatibility_date": "2026-05-14",
 	"observability": {
