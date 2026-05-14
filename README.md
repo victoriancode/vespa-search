@@ -62,7 +62,7 @@ npx wrangler vectorize create-metadata-index vespa-search-code --propertyName=re
 npx wrangler d1 create vespa-search-db
 ```
 
-Copy the D1 `database_id` into `wrangler.jsonc`, replacing `REPLACE_WITH_D1_DATABASE_ID`.
+Copy the D1 `database_id` into `wrangler.worker.jsonc`.
 
 Optional for higher GitHub API limits:
 
@@ -81,6 +81,17 @@ Set these GitHub secrets:
 - `CLOUDFLARE_ACCOUNT_ID`
 - `CLOUDFLARE_API_TOKEN`
 
+The API token should be scoped to the target account and include these account permissions:
+
+- `Cloudflare Pages:Edit`
+- `Workers Scripts:Edit`
+- `D1:Edit`
+- `Vectorize:Edit`
+- `Workers AI:Edit`
+
+If Wrangler still logs `/memberships` authentication failures while diagnosing a failed deploy, add the user
+permission `Memberships:Read` or use Cloudflare's broader Workers/Pages deployment token template.
+
 Set this GitHub Actions variable for the frontend:
 
 - `NEXT_PUBLIC_API_BASE`, for example `https://vespa-search-api.<your-subdomain>.workers.dev`
@@ -88,6 +99,7 @@ Set this GitHub Actions variable for the frontend:
 Manual deploy:
 
 ```bash
+npx wrangler pages project create vespa-search --production-branch main
 npm run cf:d1:migrate
 npm run cf:deploy
 npm --prefix frontend install

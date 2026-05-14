@@ -5,7 +5,7 @@ on:
     branches: ["main"]
     paths:
       - 'cloudflare/**'
-      - 'wrangler.jsonc'
+      - 'wrangler.worker.jsonc'
       - 'package.json'
       - '.github/workflows/deploy-backend.yml'
   workflow_dispatch:

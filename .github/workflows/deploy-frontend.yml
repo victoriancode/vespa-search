@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'frontend/**'
+      - 'wrangler.jsonc'
+      - 'package.json'
       - '.github/workflows/deploy-frontend.yml'
   workflow_dispatch:
 

@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "cf:dev": "wrangler dev",
-    "cf:deploy": "wrangler deploy",
-    "cf:d1:migrate": "wrangler d1 migrations apply vespa-search-db --remote",
+    "cf:dev": "wrangler dev --config wrangler.worker.jsonc",
+    "cf:deploy": "wrangler deploy --config wrangler.worker.jsonc",
+    "cf:d1:migrate": "wrangler d1 migrations apply vespa-search-db --remote --config wrangler.worker.jsonc",
     "cf:pages:build": "npm --prefix frontend run build",
     "cf:pages:deploy": "wrangler pages deploy frontend/out --project-name vespa-search"
   },
